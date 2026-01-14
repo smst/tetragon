@@ -42,20 +42,18 @@ export default function Scoreboard({ competitors }) {
         if (sortConfig.key !== name)
             return "text-gray-400 opacity-0 group-hover:opacity-50";
         return sortConfig.direction === "asc"
-            ? "text-indigo-600 rotate-180"
-            : "text-indigo-600";
+            ? "text-blue-700 rotate-180"
+            : "text-blue-700";
     };
 
     return (
         <div className="flex flex-col">
             <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                 <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    {/* REMOVED: divide-y classes from here to prevent flashing */}
-                    <div className="shadow overflow-hidden border border-gray-200 sm:rounded-lg bg-white">
+                    <div className="shadow overflow-hidden border border-gray-300 rounded-xl bg-white">
                         <table className="min-w-full border-collapse">
-                            <thead className="bg-gray-50">
-                                {/* Added border-b explicitly to header */}
-                                <tr className="border-b border-gray-200">
+                            <thead className="bg-gray-100">
+                                <tr className="border-b border-gray-300">
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Rank
                                     </th>
@@ -153,8 +151,7 @@ export default function Scoreboard({ competitors }) {
                                 {sortedCompetitors.map((c, index) => (
                                     <tr
                                         key={c.id}
-                                        // FIXED: Added border-b explicitly here instead of using divide-y
-                                        className="border-b border-gray-200 hover:bg-gray-50 transition-colors last:border-0"
+                                        className="border-b border-gray-200 hover:bg-blue-50 transition-colors last:border-0"
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             #{index + 1}
@@ -168,7 +165,7 @@ export default function Scoreboard({ competitors }) {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             {c.science.toFixed(3)}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-600 bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
                                             {c.total.toFixed(3)}
                                         </td>
                                     </tr>

@@ -81,7 +81,6 @@ export default function Home() {
             });
             if (!res.ok) throw new Error("Calculation failed");
             await fetchData();
-            alert("All scores recalculated successfully!");
         } catch (err) {
             alert("Error: " + err.message);
         } finally {
@@ -134,7 +133,7 @@ export default function Home() {
 
                 {/* --- GRADING STATIONS --- */}
                 {isStaff && (
-                    <div className="bg-white shadow rounded-lg p-8">
+                    <div className="bg-white shadow rounded-xl p-8">
                         {activeTab === "math" && (
                             <IndividualGrading
                                 competitors={competitors}
@@ -166,23 +165,23 @@ export default function Home() {
                     <section className="pt-8 border-t border-gray-200">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold text-gray-900">
-                                Live Standings
+                                Scoreboard
                             </h2>
                             <button
                                 onClick={handleCalculate}
                                 disabled={loadingScore}
                                 className={`
-                  px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm
+                  px-6 py-2 text-md font-medium text-white rounded-xl cursor-pointer
                   ${
                       loadingScore
-                          ? "bg-indigo-400 cursor-not-allowed"
-                          : "bg-indigo-600 hover:bg-indigo-700"
+                          ? "bg-blue-400 cursor-not-allowed"
+                          : "bg-blue-600 hover:bg-blue-700"
                   }
                 `}
                             >
                                 {loadingScore
                                     ? "Running Algorithm..."
-                                    : "Recalculate All Scores"}
+                                    : "Recalculate Scores"}
                             </button>
                         </div>
                         <Scoreboard competitors={competitors} teams={teams} />

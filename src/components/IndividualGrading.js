@@ -125,7 +125,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                 setResponses({});
                                 setStatus("");
                             }}
-                            className="px-5 py-2 bg-gray-200 text-gray-700 rounded-xl text-md hover:bg-gray-300 cursor-pointer"
+                            className="px-5 py-2 bg-gray-200 text-gray-800 rounded-xl font-medium text-md hover:bg-gray-300 cursor-pointer"
                         >
                             Clear
                         </button>
