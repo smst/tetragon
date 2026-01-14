@@ -90,7 +90,7 @@ export default function Home() {
 
     if (loadingAuth)
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center text-3xl font-medium justify-center bg-gray-50">
                 Loading...
             </div>
         );
