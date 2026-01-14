@@ -116,15 +116,15 @@ export default function Home() {
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
                                         className={`
-                    whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors cursor-pointer
+                    whitespace-nowrap py-2 px-3 border-b-2 font-medium text-md capitalize transition-colors cursor-pointer
                     ${
                         activeTab === tab
-                            ? "border-indigo-500 text-indigo-600"
+                            ? "border-blue-500 text-blue-600"
                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }
                   `}
                                     >
-                                        {tab} Station
+                                        {tab}
                                     </button>
                                 )
                             )}
@@ -134,19 +134,19 @@ export default function Home() {
 
                 {/* --- GRADING STATIONS --- */}
                 {isStaff && (
-                    <div className="bg-white shadow rounded-lg p-6 border border-gray-100">
+                    <div className="bg-white shadow rounded-lg p-8">
                         {activeTab === "math" && (
                             <IndividualGrading
                                 competitors={competitors}
                                 roundType="math"
-                                title="Math Round Grading"
+                                title="Math Individual Round"
                             />
                         )}
                         {activeTab === "science" && (
                             <IndividualGrading
                                 competitors={competitors}
                                 roundType="science"
-                                title="Science Round Grading"
+                                title="Science Individual Round"
                             />
                         )}
                         {activeTab === "team" && <TeamGrading teams={teams} />}

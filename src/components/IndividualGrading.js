@@ -63,7 +63,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
     const toggleAnswer = (qNum) => {
         setResponses((prev) => ({ ...prev, [qNum]: !prev[qNum] }));
-        setStatus("Unsaved changes...");
+        setStatus("Unsaved changes!");
     };
 
     const handleSave = async () => {
@@ -97,18 +97,15 @@ export default function IndividualGrading({ competitors, roundType, title }) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
 
             {/* --- SEARCH BAR --- */}
             <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Find Competitor
-                </label>
                 <div className="flex gap-2">
                     <input
                         type="text"
-                        placeholder="Type a name (e.g., 'Bob')..."
+                        placeholder="Search for competitor"
                         value={
                             selectedStudent ? selectedStudent.name : searchTerm
                         }
@@ -118,7 +115,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                             setResponses({});
                             setStatus("");
                         }}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                        className="block w-full rounded-xl border-gray-300 sm:text-md border px-4 py-2"
                     />
                     {selectedStudent && (
                         <button
@@ -128,7 +125,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                 setResponses({});
                                 setStatus("");
                             }}
-                            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300"
+                            className="px-5 py-2 bg-gray-200 text-gray-700 rounded-xl text-md hover:bg-gray-300 cursor-pointer"
                         >
                             Clear
                         </button>
@@ -137,19 +134,19 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
                 {/* Search Results Dropdown (Only shows when typing) */}
                 {searchTerm && !selectedStudent && (
-                    <div className="absolute z-10 w-full bg-white mt-1 border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="absolute z-10 w-full bg-white mt-1 border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-auto">
                         {filteredCompetitors.length > 0 ? (
                             filteredCompetitors.map((c) => (
                                 <button
                                     key={c.id}
                                     onClick={() => handleSelect(c)}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
+                                    className="w-full text-left px-4 py-2 text-md font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 cursor-pointer"
                                 >
                                     {c.name}
                                 </button>
                             ))
                         ) : (
-                            <div className="px-4 py-2 text-sm text-gray-500">
+                            <div className="px-4 py-2 text-md text-gray-500">
                                 No matching student found.
                             </div>
                         )}
@@ -159,19 +156,18 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
             {/* --- GRADING INTERFACE --- */}
             {selectedStudent && (
-                <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                    {/* Status Bar */}
+                <div>
                     <div
-                        className={`p-3 rounded-md mb-4 text-sm font-medium flex justify-between items-center ${
+                        className={`px-5 py-3 rounded-xl mb-4 text-md font-medium flex justify-between items-center ${
                             loadingData
                                 ? "bg-yellow-50 text-yellow-800"
-                                : "bg-indigo-50 text-indigo-800"
+                                : "bg-blue-50 text-blue-800"
                         }`}
                     >
                         <span>
-                            Grading: <strong>{selectedStudent.name}</strong>
+                            Now Grading: <strong>{selectedStudent.name}</strong>
                         </span>
-                        <span className="text-xs opacity-75">{status}</span>
+                        <span className="text-sm">{status}</span>
                     </div>
 
                     {loadingData ? (
@@ -189,11 +185,11 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                         key={num}
                                         onClick={() => toggleAnswer(num)}
                                         className={`
-                      h-10 w-full rounded text-sm font-semibold transition-all shadow-sm border
+                      h-10 w-full rounded-xl text-lg font-semibold transition-all cursor-pointer
                       ${
                           responses[num]
-                              ? "bg-green-600 text-white border-green-700 hover:bg-green-700 ring-2 ring-green-300"
-                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                       }
                     `}
                                     >
@@ -205,7 +201,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                             <div className="flex items-center justify-end border-t border-gray-100 pt-4">
                                 <button
                                     onClick={handleSave}
-                                    className="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    className="inline-flex justify-center py-2 px-6 text-md font-medium rounded-xl cursor-pointer text-white bg-blue-600 hover:bg-blue-700"
                                 >
                                     Save Grades
                                 </button>
