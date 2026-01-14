@@ -61,7 +61,7 @@ export default function TeamGrading({ teams }) {
 
     const toggleAnswer = (qNum) => {
         setResponses((prev) => ({ ...prev, [qNum]: !prev[qNum] }));
-        setStatus("Unsaved changes...");
+        setStatus("Unsaved changes!");
     };
 
     const handleSave = async () => {
@@ -95,20 +95,15 @@ export default function TeamGrading({ teams }) {
     };
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">
-                Team Round Grading
-            </h2>
+        <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900">Team Round</h2>
 
             {/* --- SEARCH BAR --- */}
             <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Find Team
-                </label>
                 <div className="flex gap-2">
                     <input
                         type="text"
-                        placeholder="Type team name..."
+                        placeholder="Search for team"
                         value={selectedTeam ? selectedTeam.name : searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -116,7 +111,7 @@ export default function TeamGrading({ teams }) {
                             setResponses({});
                             setStatus("");
                         }}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                        className="block w-full rounded-xl border-gray-300 sm:text-md border px-4 py-2"
                     />
                     {selectedTeam && (
                         <button
@@ -126,7 +121,7 @@ export default function TeamGrading({ teams }) {
                                 setResponses({});
                                 setStatus("");
                             }}
-                            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300"
+                            className="px-5 py-2 bg-gray-200 text-gray-800 rounded-xl font-medium text-md hover:bg-gray-300 cursor-pointer"
                         >
                             Clear
                         </button>
@@ -135,19 +130,19 @@ export default function TeamGrading({ teams }) {
 
                 {/* Dropdown Results */}
                 {searchTerm && !selectedTeam && (
-                    <div className="absolute z-10 w-full bg-white mt-1 border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="absolute z-10 w-full bg-white mt-1 border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-auto">
                         {filteredTeams.length > 0 ? (
                             filteredTeams.map((t) => (
                                 <button
                                     key={t.id}
                                     onClick={() => handleSelect(t)}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
+                                    className="w-full text-left px-4 py-2 text-md font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 cursor-pointer"
                                 >
                                     {t.name}
                                 </button>
                             ))
                         ) : (
-                            <div className="px-4 py-2 text-sm text-gray-500">
+                            <div className="px-4 py-2 text-md text-gray-500">
                                 No matching team found.
                             </div>
                         )}
@@ -157,18 +152,18 @@ export default function TeamGrading({ teams }) {
 
             {/* --- GRADING INTERFACE --- */}
             {selectedTeam && (
-                <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                <div>
                     <div
-                        className={`p-3 rounded-md mb-4 text-sm font-medium flex justify-between items-center ${
+                        className={`px-5 py-3 rounded-xl mb-4 text-md font-medium flex justify-between items-center ${
                             loadingData
                                 ? "bg-yellow-50 text-yellow-800"
                                 : "bg-blue-50 text-blue-800"
                         }`}
                     >
                         <span>
-                            Grading Team: <strong>{selectedTeam.name}</strong>
+                            Now Grading: <strong>{selectedTeam.name}</strong>
                         </span>
-                        <span className="text-xs opacity-75">{status}</span>
+                        <span className="text-sm">{status}</span>
                     </div>
 
                     {loadingData ? (
@@ -177,8 +172,8 @@ export default function TeamGrading({ teams }) {
                         </div>
                     ) : (
                         <>
-                            <p className="text-sm text-gray-500 mb-2">
-                                Mark correct answers (Questions 1-10)
+                            <p className="text-md text-gray-500 mb-2">
+                                Mark correct answers (Questions 1&ndash;10)
                             </p>
                             <div className="grid grid-cols-5 gap-3 mb-6">
                                 {Array.from(
@@ -189,11 +184,11 @@ export default function TeamGrading({ teams }) {
                                         key={num}
                                         onClick={() => toggleAnswer(num)}
                                         className={`
-                      h-12 w-full rounded-md text-base font-bold transition-all shadow-sm border
+                      h-10 w-full rounded-xl text-lg font-semibold transition-all cursor-pointer
                       ${
                           responses[num]
-                              ? "bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300"
-                              : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                       }
                     `}
                                     >
@@ -202,12 +197,12 @@ export default function TeamGrading({ teams }) {
                                 ))}
                             </div>
 
-                            <div className="flex justify-end">
+                            <div className="flex items-center justify-end border-t border-gray-100 pt-4">
                                 <button
                                     onClick={handleSave}
-                                    className="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    className="inline-flex justify-center py-2 px-6 text-md font-medium rounded-xl cursor-pointer text-white bg-blue-600 hover:bg-blue-700"
                                 >
-                                    Save Team Round
+                                    Save Grades
                                 </button>
                             </div>
                         </>

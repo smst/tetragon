@@ -176,7 +176,10 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-6">
+                            <p className="text-md text-gray-500 mb-2">
+                                Mark correct answers (Questions 1&ndash;20)
+                            </p>
+                            <div className="grid grid-cols-5 sm:grid-cols-10 gap-3 mb-6">
                                 {Array.from(
                                     { length: 20 },
                                     (_, i) => i + 1
