@@ -98,12 +98,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between border-b pb-2">
-                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-                <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-1 rounded capitalize">
-                    {roundType}
-                </span>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
 
             {/* --- SEARCH BAR --- */}
             <div className="relative">

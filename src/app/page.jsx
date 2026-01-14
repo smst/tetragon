@@ -116,7 +116,7 @@ export default function Home() {
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
                                         className={`
-                    whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors
+                    whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors cursor-pointer
                     ${
                         activeTab === tab
                             ? "border-indigo-500 text-indigo-600"
