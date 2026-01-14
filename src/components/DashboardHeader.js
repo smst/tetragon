@@ -25,7 +25,7 @@ export default function DashboardHeader({ userEmail, role, onLogout }) {
                         </span>
                         <button
                             onClick={onLogout}
-                            className="px-4 py-2 rounded-xl text-sm font-medium bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+                            className="px-4 py-2 rounded-lg shadow-md text-sm font-medium bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-800 transition-colors cursor-pointer"
                         >
                             Sign Out
                         </button>
