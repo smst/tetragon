@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -30,50 +31,38 @@ export default function LoginPage() {
     };
 
     return (
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "center",
-                marginTop: "100px",
-                fontFamily: "sans-serif",
-            }}
-        >
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+            <div className="mb-8 relative group">
+                <div className="rounded-full shadow-lg p-1 bg-white border border-gray-200">
+                    <div className="rounded-full overflow-hidden h-30 w-30 flex items-center justify-center">
+                        <Image
+                            src="/logo.jpg"
+                            alt="SMST Logo"
+                            width={110}
+                            height={110}
+                            className="object-cover"
+                            priority
+                        />
+                    </div>
+                </div>
+            </div>
+
             <form
                 onSubmit={handleLogin}
-                style={{
-                    border: "1px solid #ccc",
-                    padding: "40px",
-                    borderRadius: "8px",
-                    width: "300px",
-                    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                }}
+                className="border border-gray-300 rounded-xl shadow-lg p-8 w-full max-w-sm bg-white"
             >
-                <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+                <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">
                     SMST Staff Login
                 </h2>
 
                 {error && (
-                    <div
-                        style={{
-                            color: "red",
-                            marginBottom: "15px",
-                            fontSize: "0.9rem",
-                            textAlign: "center",
-                        }}
-                    >
+                    <div className="bg-red-200 border border-red-500 rounded-lg px-4 py-3 mb-6 text-red-500 text-sm text-center">
                         {error}
                     </div>
                 )}
 
-                <div style={{ marginBottom: "15px" }}>
-                    <label
-                        style={{
-                            display: "block",
-                            marginBottom: "5px",
-                            fontSize: "0.9rem",
-                            fontWeight: "bold",
-                        }}
-                    >
+                <div className="mb-6">
+                    <label className="text-gray-900 font-bold text-md mb-1.5 block">
                         Email
                     </label>
                     <input
@@ -81,26 +70,13 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        placeholder="volunteer@smst.org"
-                        style={{
-                            width: "100%",
-                            padding: "10px",
-                            borderRadius: "4px",
-                            border: "1px solid #ddd",
-                            boxSizing: "border-box",
-                        }}
+                        placeholder="volunteer@gmail.com"
+                        className="px-3 py-2 border border-gray-300 rounded-md mx-auto w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 
-                <div style={{ marginBottom: "25px" }}>
-                    <label
-                        style={{
-                            display: "block",
-                            marginBottom: "5px",
-                            fontSize: "0.9rem",
-                            fontWeight: "bold",
-                        }}
-                    >
+                <div className="mb-8">
+                    <label className="text-gray-900 font-bold text-md mb-1.5 block">
                         Password
                     </label>
                     <input
@@ -108,29 +84,14 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        style={{
-                            width: "100%",
-                            padding: "10px",
-                            borderRadius: "4px",
-                            border: "1px solid #ddd",
-                            boxSizing: "border-box",
-                        }}
+                        className="px-3 py-2 border border-gray-300 rounded-md mx-auto w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 
                 <button
                     type="submit"
                     disabled={loading}
-                    style={{
-                        width: "100%",
-                        padding: "12px",
-                        backgroundColor: "#0070f3",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                    }}
+                    className="cursor-pointer w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? "Verifying..." : "Sign In"}
                 </button>

@@ -164,7 +164,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                                                 student
                                                             )
                                                         }
-                                                        className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:shadow-sm hover:text-blue-700 rounded-lg transition-colors flex justify-between items-center group cursor-pointer"
+                                                        className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:shadow-sm hover:text-blue-700 rounded-lg  flex justify-between items-center group cursor-pointer"
                                                     >
                                                         <span>
                                                             {student.name}
