@@ -3,11 +3,23 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function DesignGrading({ teams }) {
-    const [selectedTeamId, setSelectedTeamId] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedTeam, setSelectedTeam] = useState(null);
     const [distance, setDistance] = useState("");
     const [materials, setMaterials] = useState("");
     const [calculatedScore, setCalculatedScore] = useState(0);
     const [status, setStatus] = useState("");
+    const [loadingData, setLoadingData] = useState(false);
+
+    // Filter teams based on search input
+    const filteredTeams =
+        searchTerm === ""
+            ? []
+            : teams
+                  .filter((t) =>
+                      t.name.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .slice(0, 5); // Limit results for cleaner UI
 
     // --- CUSTOM SCORING FORMULA ---
     // Adjust this math to match your specific tournament rules

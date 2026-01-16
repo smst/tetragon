@@ -60,7 +60,16 @@ export default function Home() {
         // Fetch Competitors (with their team_id)
         const { data: compData } = await supabase
             .from("competitors")
-            .select("*")
+            .select(
+                `
+                *,
+                team:teams (
+                    id,
+                    name,
+                    room
+                )
+            `
+            )
             .order("name");
         if (compData) setCompetitors(compData);
 
@@ -88,6 +97,15 @@ export default function Home() {
         }
     };
 
+    const onLogout = async () => {
+        await supabase.auth.signOut();
+        router.push("/login");
+    };
+
+    const onClickSchedule = () => {
+        router.push("/schedule");
+    };
+
     if (loadingAuth)
         return (
             <div className="min-h-screen flex items-center text-3xl font-medium justify-center bg-gray-50">
@@ -98,8 +116,12 @@ export default function Home() {
     const isStaff = role === "admin" || role === "grader";
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
-            <DashboardHeader userEmail={session.user.email} role={role} />
+        <div className="min-h-screen bg-white pb-20">
+            <DashboardHeader
+                userEmail={session.user.email}
+                role={role}
+                onLogout={onLogout}
+            />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
                 {/* --- TABS (Staff Only) --- */}
@@ -133,7 +155,7 @@ export default function Home() {
 
                 {/* --- GRADING STATIONS --- */}
                 {isStaff && (
-                    <div className="bg-white shadow rounded-xl p-8">
+                    <div className="bg-white shadow-lg border border-gray-300 rounded-xl p-8">
                         {activeTab === "math" && (
                             <IndividualGrading
                                 competitors={competitors}
@@ -171,13 +193,13 @@ export default function Home() {
                                 onClick={handleCalculate}
                                 disabled={loadingScore}
                                 className={`
-                  px-6 py-2 text-md font-medium text-white rounded-xl cursor-pointer
-                  ${
-                      loadingScore
-                          ? "bg-blue-400 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700"
-                  }
-                `}
+                                    px-6 py-2 text-md font-medium text-white rounded-xl cursor-pointer
+                                    ${
+                                        loadingScore
+                                            ? "bg-blue-400 cursor-not-allowed"
+                                            : "bg-blue-600 hover:bg-blue-700"
+                                    }
+                                `}
                             >
                                 {loadingScore
                                     ? "Running Algorithm..."
