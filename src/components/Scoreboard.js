@@ -50,7 +50,7 @@ export default function Scoreboard({ competitors }) {
         <div className="flex flex-col">
             <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                 <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div className="shadow overflow-hidden border border-gray-300 rounded-xl bg-white">
+                    <div className="shadow-md overflow-hidden border border-gray-300 rounded-xl bg-white mb-100">
                         <table className="min-w-full border-collapse">
                             <thead className="bg-gray-100">
                                 <tr className="border-b border-gray-300">

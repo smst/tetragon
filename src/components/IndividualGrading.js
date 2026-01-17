@@ -99,8 +99,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
             }
         }
         setStatus("Saved successfully!");
-        // Optional: Auto-go back to list after save?
-        // setSelectedStudent(null);
+        setSelectedStudent(null);
     };
 
     return (
@@ -111,7 +110,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                 {selectedStudent && (
                     <button
                         onClick={() => setSelectedStudent(null)}
-                        className="text-sm font-medium text-blue-600 hover:underline cursor-pointer"
+                        className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
                     >
                         ← Back to Rooms
                     </button>
@@ -169,7 +168,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                                         <span>
                                                             {student.name}
                                                         </span>
-                                                        <span className="text-gray-300 group-hover:text-blue-400">
+                                                        <span className="text-gray-500 group-hover:text-blue-600">
                                                             →
                                                         </span>
                                                     </button>
@@ -199,7 +198,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                 {selectedStudent.team?.name}
                             </span>
                         </span>
-                        <span className="text-sm bg-white/50 px-2 py-1 rounded">
+                        <span className="text-sm px-2 py-1 rounded">
                             {status}
                         </span>
                     </div>
@@ -209,7 +208,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                             Loading scores...
                         </div>
                     ) : (
-                        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                        <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm">
                             <p className="text-md text-gray-500 mb-4 font-medium">
                                 Select Correct Answers (1&ndash;20)
                             </p>
@@ -223,11 +222,11 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                         key={num}
                                         onClick={() => toggleAnswer(num)}
                                         className={`
-                                            h-12 w-full rounded-xl text-lg font-bold transition-all shadow-sm border cursor-pointer
+                                            h-12 w-full rounded-full text-lg font-bold transition-all shadow-sm border cursor-pointer
                                             ${
                                                 responses[num]
-                                                    ? "bg-green-600 text-white border-green-700 hover:bg-green-700 ring-2 ring-green-200"
-                                                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                                                    ? "bg-green-600 text-white border-green-700 hover:bg-green-700 hover:border-green-800 shadow-green-800"
+                                                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
                                             }
                                         `}
                                     >
@@ -236,7 +235,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                 ))}
                             </div>
 
-                            <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-6">
+                            <div className="flex items-center justify-end gap-3 border-t border-gray-300 pt-6">
                                 <button
                                     onClick={() => setSelectedStudent(null)}
                                     className="px-6 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
@@ -245,7 +244,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    className="px-8 py-2.5 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95 cursor-pointer"
+                                    className="px-8 py-2.5 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-xl shadow-md shadow-blue-300 transition-all active:scale-95 cursor-pointer"
                                 >
                                     Save & Continue
                                 </button>
