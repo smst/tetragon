@@ -25,7 +25,9 @@ export default function LoginPage() {
             setError(error.message);
             setLoading(false);
         } else {
-            // Login Successful: Redirect to the main dashboard
+            // 1. Refresh router to sync server cookies so Middleware knows we are logged in
+            router.refresh();
+            // 2. Then navigate to dashboard
             router.push("/");
         }
     };
@@ -33,7 +35,7 @@ export default function LoginPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
             <div className="mb-8 relative group">
-                <div className="rounded-full shadow-lg p-1 bg-white border border-gray-200">
+                <div className="rounded-full shadow-lg p-1 bg-white border border-gray-300">
                     <div className="rounded-full overflow-hidden h-30 w-30 flex items-center justify-center">
                         <Image
                             src="/logo.jpg"
@@ -91,7 +93,7 @@ export default function LoginPage() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="cursor-pointer w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="shadow-md shadow-blue-300 active:scale-95 transition-all cursor-pointer w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md disabled:bg-blue-400 disabled:cursor-not-allowed"
                 >
                     {loading ? "Verifying..." : "Sign In"}
                 </button>
