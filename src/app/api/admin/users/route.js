@@ -77,7 +77,7 @@ export async function POST(request) {
             data: { user },
             error: inviteError,
         } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-            redirectTo: `${request.headers.get("origin")}/auth/callback?next=/reset-password`,
+            redirectTo: `${request.headers.get("origin")}/auth/confirm?next=/reset-password`,
         });
 
         if (inviteError) throw inviteError;
