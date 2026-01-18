@@ -167,21 +167,9 @@ export default function StaffManagement() {
                     {/* NEW: Create Proctor Button */}
                     <button
                         onClick={initiateInvite}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+                        className="px-8 py-2.5 shadow-md shadow-blue-300 bg-blue-600 hover:bg-blue-700 text-md text-white font-medium rounded-xl transition-all active:scale-95 cursor-pointer"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
-                        Create Proctor
+                        Create New User
                     </button>
                 </div>
 
