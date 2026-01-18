@@ -1,27 +1,42 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js"; // Standard client for auth check
 
-export async function POST() {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    );
-
-    // Pass the auth header from the request
-    const authHeader = request.headers.get("Authorization");
-    const {
-        data: { user },
-        error,
-    } = await supabase.auth.getUser(authHeader);
-
-    if (!user || error) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+// 1. Add 'request' as an argument to the function
+export async function POST(request) {
     console.log("--- STARTING ALGORITHM ---");
 
     try {
+        // --- SECURITY CHECK ---
+        // Verify the user is logged in before running expensive calculations
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        );
+
+        const authHeader = request.headers.get("Authorization");
+        const token = authHeader?.split(" ")[1]; // Remove "Bearer " prefix
+
+        if (!token) {
+            return NextResponse.json(
+                { error: "Missing Authorization Token" },
+                { status: 401 },
+            );
+        }
+
+        const {
+            data: { user },
+            error: authError,
+        } = await supabase.auth.getUser(token);
+
+        if (authError || !user) {
+            return NextResponse.json(
+                { error: "Unauthorized: Invalid Token" },
+                { status: 401 },
+            );
+        }
+
+        // --- CALCULATION LOGIC ---
         // 1. FETCH EVERYTHING
         const [
             { data: mathResponses },
@@ -34,14 +49,12 @@ export async function POST() {
             supabaseAdmin.from("science_round_responses").select("*"),
             supabaseAdmin.from("team_round_responses").select("*"),
             supabaseAdmin.from("design_challenge_entries").select("*"),
-            supabaseAdmin.from("competitors").select("id, team_id"), // We need the total count
+            supabaseAdmin.from("competitors").select("id, team_id"),
         ]);
 
         const totalCompetitors = competitors.length || 1; // Avoid divide by zero
 
         // --- HELPER: THE ALGORITHM ---
-        // x = (Number of people correct) / (Total Number of Students)
-        // Points = 1 + sqrt(1 - x)
         const calculateRoundScores = (responses) => {
             // Step A: Count how many people got each question correct
             const correctCounts = {};
@@ -53,9 +66,6 @@ export async function POST() {
             });
 
             // Step B: Calculate the "Value" of each question
-            // If Question 1 was answered correctly by 10 people out of 100:
-            // x = 0.1
-            // Points = 1 + sqrt(0.9) = 1.948
             const questionValues = {};
             Object.keys(correctCounts).forEach((qNum) => {
                 const correctCount = correctCounts[qNum];
@@ -68,7 +78,6 @@ export async function POST() {
             responses.forEach((r) => {
                 if (r.is_correct) {
                     const points = questionValues[r.question_number];
-                    // Initialize score if not exists, then add points
                     studentScores[r.competitor_id] =
                         (studentScores[r.competitor_id] || 0) + points;
                 }
@@ -89,7 +98,6 @@ export async function POST() {
             science_round_score: scienceScores[comp.id] || 0,
         }));
 
-        // Batch update competitors
         const { error: compError } = await supabaseAdmin
             .from("competitors")
             .upsert(compUpdates);
@@ -114,13 +122,12 @@ export async function POST() {
                 };
             }
 
-            // Add this student's scores to the team total
             teamStats[c.team_id].mathSum += mathScores[c.id] || 0;
             teamStats[c.team_id].sciSum += scienceScores[c.id] || 0;
             teamStats[c.team_id].members += 1;
         });
 
-        // B. Add Team Round (Fixed value: 5 points per correct answer)
+        // B. Add Team Round
         if (teamResponses) {
             teamResponses.forEach((r) => {
                 if (r.is_correct && teamStats[r.team_id]) {
@@ -129,7 +136,7 @@ export async function POST() {
             });
         }
 
-        // C. Add Design Round (Raw score from database)
+        // C. Add Design Round
         if (designEntries) {
             designEntries.forEach((d) => {
                 if (teamStats[d.team_id]) {
@@ -141,10 +148,8 @@ export async function POST() {
         // 5. UPDATE TEAMS
         const teamUpdates = Object.keys(teamStats).map((teamId) => {
             const s = teamStats[teamId];
-            // Calculate Averages (Prevent divide by zero)
             const avgMath = s.members > 0 ? s.mathSum / s.members : 0;
             const avgSci = s.members > 0 ? s.sciSum / s.members : 0;
-
             const overall = avgMath + avgSci + s.teamRound + s.design;
 
             return {
