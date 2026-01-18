@@ -1,7 +1,24 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js"; // Standard client for auth check
 
 export async function POST() {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    );
+
+    // Pass the auth header from the request
+    const authHeader = request.headers.get("Authorization");
+    const {
+        data: { user },
+        error,
+    } = await supabase.auth.getUser(authHeader);
+
+    if (!user || error) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     console.log("--- STARTING ALGORITHM ---");
 
     try {
