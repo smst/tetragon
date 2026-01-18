@@ -10,6 +10,7 @@ import TeamGrading from "@/components/TeamGrading";
 import DesignGrading from "@/components/DesignGrading";
 import ProctorView from "@/components/ProctorView";
 import Scoreboard from "@/components/Scoreboard";
+import StaffManagement from "@/components/StaffManagement";
 
 export default function DashboardClient({
     initialCompetitors,
@@ -106,7 +107,7 @@ export default function DashboardClient({
                     </div>
                 )}
 
-                {/* --- GRADING STATIONS --- */}
+                {/* GRADING STATIONS */}
                 {isStaff && (
                     <div className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
                         {activeTab === "math" && (
@@ -130,12 +131,12 @@ export default function DashboardClient({
                     </div>
                 )}
 
-                {/* --- PROCTOR VIEW --- */}
+                {/* PROCTOR VIEW */}
                 {userRole === "proctor" && (
                     <ProctorView competitors={competitors} teams={teams} />
                 )}
 
-                {/* --- SCOREBOARD (Admin Only) --- */}
+                {/* SCOREBOARD (Admin Only) */}
                 {userRole === "admin" && (
                     <section className="pt-8">
                         <div className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
@@ -161,6 +162,15 @@ export default function DashboardClient({
                                 competitors={competitors}
                                 teams={teams}
                             />
+                        </div>
+                    </section>
+                )}
+
+                {/* STAFF MANAGEMENT (Admin Only) */}
+                {userRole === "admin" && (
+                    <section className="pt-8">
+                        <div className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
+                            <StaffManagement />
                         </div>
                     </section>
                 )}

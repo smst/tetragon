@@ -50,7 +50,7 @@ export default function Scoreboard({ competitors }) {
         <div className="flex flex-col">
             <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                 <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div className="shadow-md overflow-hidden border border-gray-300 rounded-xl bg-white mb-100">
+                    <div className="shadow-md overflow-hidden border border-gray-300 rounded-xl bg-white mb-5">
                         <table className="min-w-full border-collapse">
                             <thead className="bg-gray-100">
                                 <tr className="border-b border-gray-300">
@@ -66,7 +66,7 @@ export default function Scoreboard({ competitors }) {
                                             Name
                                             <svg
                                                 className={`w-3 h-3 transform transition-transform ${getClassNamesFor(
-                                                    "name"
+                                                    "name",
                                                 )}`}
                                                 fill="currentColor"
                                                 viewBox="0 0 20 20"
@@ -88,7 +88,7 @@ export default function Scoreboard({ competitors }) {
                                             Math
                                             <svg
                                                 className={`w-3 h-3 transform transition-transform ${getClassNamesFor(
-                                                    "math"
+                                                    "math",
                                                 )}`}
                                                 fill="currentColor"
                                                 viewBox="0 0 20 20"
@@ -110,7 +110,7 @@ export default function Scoreboard({ competitors }) {
                                             Science
                                             <svg
                                                 className={`w-3 h-3 transform transition-transform ${getClassNamesFor(
-                                                    "science"
+                                                    "science",
                                                 )}`}
                                                 fill="currentColor"
                                                 viewBox="0 0 20 20"
@@ -132,7 +132,7 @@ export default function Scoreboard({ competitors }) {
                                             Overall
                                             <svg
                                                 className={`w-3 h-3 transform transition-transform ${getClassNamesFor(
-                                                    "total"
+                                                    "total",
                                                 )}`}
                                                 fill="currentColor"
                                                 viewBox="0 0 20 20"
