@@ -7,9 +7,10 @@ export default function StaffManagement() {
     const [loading, setLoading] = useState(true);
 
     // -- Modals State --
-    const [modalType, setModalType] = useState(null); // 'delete' | 'role' | null
+    const [modalType, setModalType] = useState(null); // 'delete' | 'role' | 'invite'
     const [targetUser, setTargetUser] = useState(null);
     const [pendingRole, setPendingRole] = useState(null);
+    const [inviteEmail, setInviteEmail] = useState(""); // State for the input
     const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
@@ -38,6 +39,43 @@ export default function StaffManagement() {
     };
 
     // --- HANDLERS ---
+    const initiateInvite = () => {
+        setInviteEmail("");
+        setModalType("invite");
+    };
+
+    const confirmInvite = async (e) => {
+        e.preventDefault(); // Prevent form submission refresh
+        setIsProcessing(true);
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+
+        try {
+            const res = await fetch("/api/admin/users", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email: inviteEmail }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Failed to invite user");
+            }
+
+            alert("Invitation sent successfully!");
+            await fetchUsers(); // Refresh list to show new user
+            closeModal();
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     const initiateRoleChange = (user, newRole) => {
         setTargetUser(user);
         setPendingRole(newRole);
@@ -108,6 +146,7 @@ export default function StaffManagement() {
         setModalType(null);
         setTargetUser(null);
         setPendingRole(null);
+        setInviteEmail("");
         setIsProcessing(false);
     };
 
@@ -125,9 +164,25 @@ export default function StaffManagement() {
                     <h2 className="text-xl font-bold text-gray-900">
                         Staff Management
                     </h2>
-                    <span className="text-sm text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
-                        {users.length} Users Found
-                    </span>
+                    {/* NEW: Create Proctor Button */}
+                    <button
+                        onClick={initiateInvite}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fillRule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clipRule="evenodd"
+                            />
+                        </svg>
+                        Create Proctor
+                    </button>
                 </div>
 
                 <div className="shadow-md border border-gray-300 rounded-xl overflow-hidden mb-5">
@@ -157,9 +212,11 @@ export default function StaffManagement() {
                                         </div>
                                         <div className="text-xs text-gray-500">
                                             Last login:{" "}
-                                            {new Date(
-                                                user.last_sign_in,
-                                            ).toLocaleDateString()}
+                                            {user.last_sign_in
+                                                ? new Date(
+                                                      user.last_sign_in,
+                                                  ).toLocaleDateString()
+                                                : "Never"}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -200,63 +257,117 @@ export default function StaffManagement() {
                 </div>
             </div>
 
-            {/* --- CONFIRMATION MODAL --- */}
+            {/* --- MODAL --- */}
             {modalType && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100">
                         <h3 className="text-lg font-bold text-gray-900 mb-2">
-                            {modalType === "delete"
-                                ? "Remove Staff Member?"
-                                : "Change User Role?"}
+                            {modalType === "delete" && "Remove Staff Member?"}
+                            {modalType === "role" && "Change User Role?"}
+                            {modalType === "invite" && "Invite New Proctor"}
                         </h3>
 
-                        <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                            {modalType === "delete" ? (
-                                <>
-                                    Are you sure you want to permanently delete{" "}
-                                    <strong>{targetUser?.email}</strong>? This
-                                    cannot be undone.
-                                </>
-                            ) : (
-                                <>
-                                    Are you sure you want to change{" "}
-                                    <strong>{targetUser?.email}</strong> from{" "}
-                                    <span className="capitalize font-bold">
-                                        {targetUser?.role}
-                                    </span>{" "}
-                                    to{" "}
-                                    <span className="capitalize font-bold">
-                                        {pendingRole}
-                                    </span>
-                                    ?
-                                </>
-                            )}
-                        </p>
+                        {/* INVITE FORM CONTENT */}
+                        {modalType === "invite" && (
+                            <form onSubmit={confirmInvite}>
+                                <div className="mb-6">
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        Enter the email address of the new
+                                        proctor. They will receive an email with
+                                        a link to set their password.
+                                    </p>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Email Address
+                                    </label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={inviteEmail}
+                                        onChange={(e) =>
+                                            setInviteEmail(e.target.value)
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="colleague@example.com"
+                                    />
+                                </div>
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        disabled={isProcessing}
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isProcessing}
+                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm cursor-pointer"
+                                    >
+                                        {isProcessing
+                                            ? "Sending..."
+                                            : "Send Invite"}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
 
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={closeModal}
-                                disabled={isProcessing}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={
-                                    modalType === "delete"
-                                        ? confirmDelete
-                                        : confirmRoleChange
-                                }
-                                disabled={isProcessing}
-                                className={`px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm cursor-pointer ${
-                                    modalType === "delete"
-                                        ? "bg-red-600 hover:bg-red-700"
-                                        : "bg-blue-600 hover:bg-blue-700"
-                                }`}
-                            >
-                                {isProcessing ? "Processing..." : "Confirm"}
-                            </button>
-                        </div>
+                        {/* DELETE/ROLE CONTENT */}
+                        {modalType !== "invite" && (
+                            <>
+                                <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+                                    {modalType === "delete" ? (
+                                        <>
+                                            Are you sure you want to permanently
+                                            delete{" "}
+                                            <strong>{targetUser?.email}</strong>
+                                            ? This cannot be undone.
+                                        </>
+                                    ) : (
+                                        <>
+                                            Are you sure you want to change{" "}
+                                            <strong>{targetUser?.email}</strong>{" "}
+                                            from{" "}
+                                            <span className="capitalize font-bold">
+                                                {targetUser?.role}
+                                            </span>{" "}
+                                            to{" "}
+                                            <span className="capitalize font-bold">
+                                                {pendingRole}
+                                            </span>
+                                            ?
+                                        </>
+                                    )}
+                                </p>
+
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        onClick={closeModal}
+                                        disabled={isProcessing}
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={
+                                            modalType === "delete"
+                                                ? confirmDelete
+                                                : confirmRoleChange
+                                        }
+                                        disabled={isProcessing}
+                                        className={`px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm cursor-pointer ${
+                                            modalType === "delete"
+                                                ? "bg-red-600 hover:bg-red-700"
+                                                : "bg-blue-600 hover:bg-blue-700"
+                                        }`}
+                                    >
+                                        {isProcessing
+                                            ? "Processing..."
+                                            : "Confirm"}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
