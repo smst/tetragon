@@ -1,7 +1,7 @@
 export default function DashboardHeader({ userEmail, role, onLogout }) {
     // Define badge colors for roles
     return (
-        <nav className="bg-white border-b border-gray-200 shadow-md sticky top-0 z-50">
+        <nav className="bg-white border-b border-gray-300 shadow-md sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     {/* Title and Role Badge */}

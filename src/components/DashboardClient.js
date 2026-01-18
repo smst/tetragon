@@ -76,7 +76,7 @@ export default function DashboardClient({
     const isStaff = userRole === "admin" || userRole === "grader";
 
     return (
-        <div className="min-h-screen bg-white pb-20">
+        <div className="bg-white pb-20">
             <DashboardHeader
                 userEmail={userEmail}
                 role={userRole}
