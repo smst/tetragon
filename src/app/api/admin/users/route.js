@@ -37,20 +37,17 @@ export async function GET(request) {
     try {
         await checkAdmin(request);
 
-        // 1. Get all users from Auth (Supabase Admin specific)
         const {
             data: { users },
             error: authError,
         } = await supabaseAdmin.auth.admin.listUsers();
         if (authError) throw authError;
 
-        // 2. Get all roles from public table
         const { data: roles, error: roleError } = await supabaseAdmin
             .from("user_roles")
             .select("*");
         if (roleError) throw roleError;
 
-        // 3. Merge data
         const combined = users.map((u) => {
             const roleEntry = roles.find((r) => r.id === u.id);
             return {
@@ -67,12 +64,41 @@ export async function GET(request) {
     }
 }
 
+// --- NEW POST METHOD ---
+export async function POST(request) {
+    try {
+        await checkAdmin(request);
+        const { email } = await request.json();
+
+        if (!email) throw new Error("Email is required");
+
+        // 1. Send the standard Supabase Invite Email
+        const {
+            data: { user },
+            error: inviteError,
+        } = await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+
+        if (inviteError) throw inviteError;
+
+        // 2. Assign 'proctor' role immediately
+        // We use upsert in case the user already existed but had no role
+        const { error: roleError } = await supabaseAdmin
+            .from("user_roles")
+            .upsert({ id: user.id, role: "proctor" });
+
+        if (roleError) throw roleError;
+
+        return NextResponse.json({ success: true, user });
+    } catch (err) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}
+
 export async function PATCH(request) {
     try {
         await checkAdmin(request);
         const { userId, newRole } = await request.json();
 
-        // Upsert role to user_roles table
         const { error } = await supabaseAdmin
             .from("user_roles")
             .upsert({ id: userId, role: newRole });
@@ -90,11 +116,9 @@ export async function DELETE(request) {
         await checkAdmin(request);
         const { userId } = await request.json();
 
-        // Delete from Auth system (Cascades to tables usually, but we clean up to be safe)
         const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
         if (error) throw error;
 
-        // Clean up role entry
         await supabaseAdmin.from("user_roles").delete().eq("id", userId);
 
         return NextResponse.json({ success: true });
