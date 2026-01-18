@@ -3,7 +3,6 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-// 1. The inner component that handles the logic
 function ConfirmContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -11,12 +10,33 @@ function ConfirmContent() {
     const [status, setStatus] = useState("Verifying invitation...");
 
     useEffect(() => {
+        // 1. Define the success handler to avoid duplication
+        const handleSuccess = () => {
+            setStatus("Login successful! Redirecting...");
+            router.replace(next);
+        };
+
+        // 2. Check immediately: Did Supabase already process the hash?
+        const checkSession = async () => {
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
+            if (session) {
+                handleSuccess();
+            }
+        };
+        checkSession();
+
+        // 3. Listen for events: In case it happens slightly later
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-                setStatus("Login successful! Redirecting...");
-                router.replace(next);
+            if (
+                event === "SIGNED_IN" ||
+                event === "TOKEN_REFRESHED" ||
+                event === "PASSWORD_RECOVERY"
+            ) {
+                handleSuccess();
             }
         });
 
@@ -36,7 +56,6 @@ function ConfirmContent() {
     );
 }
 
-// 2. The main page component that wraps it in Suspense
 export default function ConfirmPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-gray-900">
