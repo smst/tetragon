@@ -10,33 +10,59 @@ function ConfirmContent() {
     const [status, setStatus] = useState("Verifying invitation...");
 
     useEffect(() => {
-        // 1. Define the success handler to avoid duplication
-        const handleSuccess = () => {
-            setStatus("Login successful! Redirecting...");
-            router.replace(next);
-        };
-
-        // 2. Check immediately: Did Supabase already process the hash?
-        const checkSession = async () => {
+        const handleAuth = async () => {
+            // 1. Check if Supabase already grabbed the session
             const {
                 data: { session },
             } = await supabase.auth.getSession();
             if (session) {
-                handleSuccess();
+                setStatus("Session found. Redirecting...");
+                router.replace(next);
+                return;
+            }
+
+            // 2. Fallback: Manually parse the URL hash
+            // This forces the login if the automatic detector fails
+            const hash = window.location.hash;
+            if (hash && hash.includes("access_token")) {
+                try {
+                    // Remove the '#' character and parse parameters
+                    const params = new URLSearchParams(hash.substring(1));
+                    const access_token = params.get("access_token");
+                    const refresh_token = params.get("refresh_token");
+
+                    if (access_token && refresh_token) {
+                        setStatus("Verifying token...");
+
+                        // Manually set the session using the tokens from the URL
+                        const { error } = await supabase.auth.setSession({
+                            access_token,
+                            refresh_token,
+                        });
+
+                        if (!error) {
+                            setStatus("Success! Redirecting...");
+                            router.replace(next);
+                            return;
+                        } else {
+                            setStatus("Error: " + error.message);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Hash parsing error:", err);
+                    setStatus("Error parsing link.");
+                }
             }
         };
-        checkSession();
 
-        // 3. Listen for events: In case it happens slightly later
+        handleAuth();
+
+        // 3. Keep the listener as a backup
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((event, session) => {
-            if (
-                event === "SIGNED_IN" ||
-                event === "TOKEN_REFRESHED" ||
-                event === "PASSWORD_RECOVERY"
-            ) {
-                handleSuccess();
+            if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+                router.replace(next);
             }
         });
 
