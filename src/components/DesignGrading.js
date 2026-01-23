@@ -17,7 +17,7 @@ export default function DesignGrading({ teams }) {
             ? []
             : teams
                   .filter((t) =>
-                      t.name.toLowerCase().includes(searchTerm.toLowerCase())
+                      t.name.toLowerCase().includes(searchTerm.toLowerCase()),
                   )
                   .slice(0, 5); // Limit results for cleaner UI
 
@@ -37,7 +37,7 @@ export default function DesignGrading({ teams }) {
     }, [distance, materials]);
 
     const handleSave = async () => {
-        if (!selectedTeamId) return;
+        if (!selectedTeam) return;
         setStatus("Saving...");
 
         // Upsert: Updates if exists, Inserts if new
@@ -46,12 +46,12 @@ export default function DesignGrading({ teams }) {
             .from("design_challenge_entries")
             .upsert(
                 {
-                    team_id: selectedTeamId,
+                    team_id: selectedTeam,
                     distance_traveled: parseFloat(distance) || 0,
                     materials_cost: parseFloat(materials) || 0,
                     final_score: calculatedScore,
                 },
-                { onConflict: "team_id" }
+                { onConflict: "team_id" },
             );
 
         if (error) {
@@ -70,11 +70,11 @@ export default function DesignGrading({ teams }) {
                     Design Challenge Grading
                 </h2>
                 <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-1 rounded">
-                    Table: design_challenge_entries
+                    This section is still in construction!
                 </span>
             </div>
 
-            <div>
+            {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     Select Team
                 </label>
@@ -122,7 +122,6 @@ export default function DesignGrading({ teams }) {
                 </div>
             </div>
 
-            {/* Live Calculator Preview */}
             <div className="bg-indigo-50 rounded-lg p-4 flex items-center justify-between border border-indigo-100">
                 <div>
                     <span className="text-sm font-medium text-indigo-900 block">
@@ -161,7 +160,7 @@ export default function DesignGrading({ teams }) {
                 >
                     Submit Design Score
                 </button>
-            </div>
+            </div> */}
         </div>
     );
 }
