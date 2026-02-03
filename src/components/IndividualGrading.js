@@ -28,7 +28,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
         // Sort Rooms: Numeric if possible, else alphabetical
         const sortedRooms = Object.keys(groups).sort((a, b) =>
-            a.localeCompare(b, undefined, { numeric: true })
+            a.localeCompare(b, undefined, { numeric: true }),
         );
 
         return { groups, sortedRooms };
@@ -160,7 +160,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                                         key={student.id}
                                                         onClick={() =>
                                                             setSelectedStudent(
-                                                                student
+                                                                student,
                                                             )
                                                         }
                                                         className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:shadow-sm hover:text-blue-700 rounded-lg  flex justify-between items-center group cursor-pointer"
@@ -208,7 +208,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                             Loading scores...
                         </div>
                     ) : (
-                        <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-sm">
+                        <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-md">
                             <p className="text-md text-gray-500 mb-4 font-medium">
                                 Select Correct Answers (1&ndash;20)
                             </p>
@@ -216,7 +216,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                             <div className="grid grid-cols-5 sm:grid-cols-10 gap-3 mb-8">
                                 {Array.from(
                                     { length: 20 },
-                                    (_, i) => i + 1
+                                    (_, i) => i + 1,
                                 ).map((num) => (
                                     <button
                                         key={num}
