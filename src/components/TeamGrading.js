@@ -171,11 +171,11 @@ export default function TeamGrading({ teams }) {
                                                     <div className="flex items-center gap-2">
                                                         {/* GRADED INDICATOR */}
                                                         {isGraded ? (
-                                                            <span className="text-green-600 font-bold bg-green-100 px-1.5 py-0.5 rounded-full text-xs border border-green-200">
-                                                                ✓ Graded
+                                                            <span className="text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full text-xs border border-green-200">
+                                                                Graded
                                                             </span>
                                                         ) : (
-                                                            <span className="text-red-600 font-bold bg-red-100 px-3 py-1 rounded-full text-xs border border-red-200">
+                                                            <span className="text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs border border-red-200">
                                                                 Not Graded
                                                             </span>
                                                         )}

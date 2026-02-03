@@ -199,22 +199,18 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                                                         student.name
                                                                     }
                                                                 </span>
-                                                                <div className="w-20 flex justify-center">
-                                                                    {isGraded ? (
-                                                                        <span className="text-green-600 font-bold bg-green-100 px-1.5 py-0.5 rounded-full text-xs border border-green-200">
-                                                                            ✓
-                                                                            Graded
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full text-xs border border-red-200">
-                                                                            Not
-                                                                            Graded
-                                                                        </span>
-                                                                    )}
-                                                                </div>
                                                             </div>
                                                             <span className="text-gray-500 group-hover:text-blue-600">
-                                                                →
+                                                                {isGraded ? (
+                                                                    <span className="text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full text-xs border border-green-200">
+                                                                        Graded
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full text-xs border border-red-200">
+                                                                        Not
+                                                                        Graded
+                                                                    </span>
+                                                                )}
                                                             </span>
                                                         </button>
                                                     );
