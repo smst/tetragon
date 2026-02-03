@@ -174,6 +174,10 @@ export default function DashboardClient({
                         </div>
                     </section>
                 )}
+
+                {userRole === "admin" && (
+                    <ProctorView competitors={competitors} teams={teams} />
+                )}
             </main>
         </div>
     );
