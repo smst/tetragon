@@ -4,19 +4,19 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function IndividualGrading({ competitors, roundType, title }) {
     // --- STATE ---
-    // If selectedStudent is null, we show the Room List.
-    // If selectedStudent is set, we show the Grading Interface.
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [responses, setResponses] = useState({});
     const [status, setStatus] = useState("");
     const [loadingData, setLoadingData] = useState(false);
 
-    // --- 1. GROUPING LOGIC (The new "Room View") ---
+    // Track which students have been graded to show indicators
+    const [gradedIDs, setGradedIDs] = useState(new Set());
+
+    // --- 1. GROUPING LOGIC ---
     const groupedData = useMemo(() => {
         const groups = {};
 
         competitors.forEach((c) => {
-            // Safe access in case team is missing (e.g. independents)
             const room = c.team?.room || "Unassigned Room";
             const teamName = c.team?.name || "No Team";
 
@@ -26,7 +26,6 @@ export default function IndividualGrading({ competitors, roundType, title }) {
             groups[room][teamName].push(c);
         });
 
-        // Sort Rooms: Numeric if possible, else alphabetical
         const sortedRooms = Object.keys(groups).sort((a, b) =>
             a.localeCompare(b, undefined, { numeric: true }),
         );
@@ -34,7 +33,25 @@ export default function IndividualGrading({ competitors, roundType, title }) {
         return { groups, sortedRooms };
     }, [competitors]);
 
-    // --- 2. FETCH GRADES (When a student is clicked) ---
+    // --- 2. FETCH GRADED STATUS (On Mount) ---
+    useEffect(() => {
+        const fetchGradedStatus = async () => {
+            const tableName = `${roundType}_round_responses`;
+            const { data } = await supabase
+                .from(tableName)
+                .select("competitor_id");
+
+            if (data) {
+                // Create a Set of unique IDs that have at least one response row
+                const ids = new Set(data.map((row) => row.competitor_id));
+                setGradedIDs(ids);
+            }
+        };
+
+        fetchGradedStatus();
+    }, [roundType]);
+
+    // --- 3. FETCH GRADES (When a student is clicked) ---
     useEffect(() => {
         if (!selectedStudent) return;
 
@@ -67,7 +84,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
         loadSavedGrades();
     }, [selectedStudent, roundType]);
 
-    // --- 3. HANDLERS ---
+    // --- 4. HANDLERS ---
     const toggleAnswer = (qNum) => {
         setResponses((prev) => ({ ...prev, [qNum]: !prev[qNum] }));
         setStatus("Unsaved changes!");
@@ -79,26 +96,32 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
         const tableName = `${roundType}_round_responses`;
 
-        // Clean slate approach (Delete old -> Insert new)
+        // 1. Delete old responses to ensure clean slate
         await supabase
             .from(tableName)
             .delete()
             .eq("competitor_id", selectedStudent.id);
 
-        const rows = Object.keys(responses).map((qNum) => ({
-            competitor_id: selectedStudent.id,
-            question_number: parseInt(qNum),
-            is_correct: responses[qNum],
-        }));
+        // 2. Generate rows for ALL 20 questions (Default to false if not clicked)
+        const rows = Array.from({ length: 20 }, (_, i) => i + 1).map(
+            (qNum) => ({
+                competitor_id: selectedStudent.id,
+                question_number: qNum,
+                is_correct: !!responses[qNum], // Forces true/false
+            }),
+        );
 
-        if (rows.length > 0) {
-            const { error } = await supabase.from(tableName).insert(rows);
-            if (error) {
-                setStatus("Save Failed: " + error.message);
-                return;
-            }
+        // 3. Insert new rows
+        const { error } = await supabase.from(tableName).insert(rows);
+
+        if (error) {
+            setStatus("Save Failed: " + error.message);
+            return;
         }
+
+        // 4. Update UI State
         setStatus("Saved successfully!");
+        setGradedIDs((prev) => new Set(prev).add(selectedStudent.id)); // Add checkmark immediately
         setSelectedStudent(null);
     };
 
@@ -106,7 +129,6 @@ export default function IndividualGrading({ competitors, roundType, title }) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-                {/* Back Button (Only visible when grading) */}
                 {selectedStudent && (
                     <button
                         onClick={() => setSelectedStudent(null)}
@@ -136,7 +158,6 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {/* Sort Teams alphabetically within room */}
                                 {Object.keys(groupedData.groups[room])
                                     .sort()
                                     .map((teamName) => (
@@ -155,24 +176,44 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                             <div className="p-2 space-y-1">
                                                 {groupedData.groups[room][
                                                     teamName
-                                                ].map((student) => (
-                                                    <button
-                                                        key={student.id}
-                                                        onClick={() =>
-                                                            setSelectedStudent(
-                                                                student,
-                                                            )
-                                                        }
-                                                        className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:shadow-sm hover:text-blue-700 rounded-lg  flex justify-between items-center group cursor-pointer"
-                                                    >
-                                                        <span>
-                                                            {student.name}
-                                                        </span>
-                                                        <span className="text-gray-500 group-hover:text-blue-600">
-                                                            →
-                                                        </span>
-                                                    </button>
-                                                ))}
+                                                ].map((student) => {
+                                                    const isGraded =
+                                                        gradedIDs.has(
+                                                            student.id,
+                                                        );
+                                                    return (
+                                                        <button
+                                                            key={student.id}
+                                                            onClick={() =>
+                                                                setSelectedStudent(
+                                                                    student,
+                                                                )
+                                                            }
+                                                            className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:shadow-sm hover:text-blue-700 rounded-lg flex justify-between items-center group cursor-pointer"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                {/* GRADED INDICATOR */}
+                                                                <div className="w-4 flex justify-center">
+                                                                    {isGraded ? (
+                                                                        <span className="text-green-600 font-bold text-xs">
+                                                                            ✓
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="w-2 h-2 rounded-full bg-gray-200"></span>
+                                                                    )}
+                                                                </div>
+                                                                <span>
+                                                                    {
+                                                                        student.name
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-gray-500 group-hover:text-blue-600">
+                                                                →
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     ))}
