@@ -4,14 +4,15 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function TeamGrading({ teams }) {
     // --- STATE ---
-    // If selectedTeam is null, we show the Room List.
-    // If selectedTeam is set, we show the Grading Interface.
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [responses, setResponses] = useState({});
     const [status, setStatus] = useState("");
     const [loadingData, setLoadingData] = useState(false);
 
-    // --- 1. GROUPING LOGIC (The new "Room View" for Teams) ---
+    // Track which teams have been graded
+    const [gradedIDs, setGradedIDs] = useState(new Set());
+
+    // --- 1. GROUPING LOGIC (Room View) ---
     const groupedData = useMemo(() => {
         const groups = {};
 
@@ -21,7 +22,6 @@ export default function TeamGrading({ teams }) {
             groups[room].push(t);
         });
 
-        // Sort Rooms: Numeric if possible, else alphabetical
         const sortedRooms = Object.keys(groups).sort((a, b) =>
             a.localeCompare(b, undefined, { numeric: true }),
         );
@@ -29,7 +29,22 @@ export default function TeamGrading({ teams }) {
         return { groups, sortedRooms };
     }, [teams]);
 
-    // --- 2. FETCH GRADES (When a team is clicked) ---
+    // --- 2. FETCH GRADED STATUS ---
+    useEffect(() => {
+        const fetchGradedStatus = async () => {
+            const { data } = await supabase
+                .from("team_round_responses")
+                .select("team_id");
+
+            if (data) {
+                const ids = new Set(data.map((row) => row.team_id));
+                setGradedIDs(ids);
+            }
+        };
+        fetchGradedStatus();
+    }, []);
+
+    // --- 3. FETCH SCORES ---
     useEffect(() => {
         if (!selectedTeam) return;
 
@@ -61,7 +76,7 @@ export default function TeamGrading({ teams }) {
         loadSavedTeamGrades();
     }, [selectedTeam]);
 
-    // --- 3. HANDLERS ---
+    // --- 4. HANDLERS ---
     const toggleAnswer = (qNum) => {
         setResponses((prev) => ({ ...prev, [qNum]: !prev[qNum] }));
         setStatus("Unsaved changes!");
@@ -71,28 +86,34 @@ export default function TeamGrading({ teams }) {
         if (!selectedTeam) return;
         setStatus("Saving...");
 
-        // Clean slate approach
+        // 1. Delete old
         await supabase
             .from("team_round_responses")
             .delete()
             .eq("team_id", selectedTeam.id);
 
-        const rows = Object.keys(responses).map((qNum) => ({
-            team_id: selectedTeam.id,
-            question_number: parseInt(qNum),
-            is_correct: responses[qNum],
-        }));
+        // 2. Prepare rows for ALL 10 questions
+        // FIX: Loop 1-10 explicitly so that "0 correct" is still saved as 10 incorrect answers.
+        const rows = Array.from({ length: 10 }, (_, i) => i + 1).map(
+            (qNum) => ({
+                team_id: selectedTeam.id,
+                question_number: qNum,
+                is_correct: !!responses[qNum], // Forces boolean true/false
+            }),
+        );
 
-        if (rows.length > 0) {
-            const { error } = await supabase
-                .from("team_round_responses")
-                .insert(rows);
-            if (error) {
-                setStatus("Error: " + error.message);
-                return;
-            }
+        // 3. Insert new
+        const { error } = await supabase
+            .from("team_round_responses")
+            .insert(rows);
+
+        if (error) {
+            setStatus("Error: " + error.message);
+            return;
         }
+
         setStatus("Saved successfully!");
+        setGradedIDs((prev) => new Set(prev).add(selectedTeam.id)); // Optimistic update
         setSelectedTeam(null);
     };
 
@@ -100,7 +121,6 @@ export default function TeamGrading({ teams }) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">Team Round</h2>
-                {/* Back Button (Only visible when grading) */}
                 {selectedTeam && (
                     <button
                         onClick={() => setSelectedTeam(null)}
@@ -132,25 +152,39 @@ export default function TeamGrading({ teams }) {
                                     .sort((a, b) =>
                                         a.name.localeCompare(b.name),
                                     )
-                                    .map((team) => (
-                                        <button
-                                            key={team.id}
-                                            onClick={() =>
-                                                setSelectedTeam(team)
-                                            }
-                                            className="w-full text-left bg-white rounded-xl border border-gray-300 shadow-md overflow-hidden hover:shadow-lg transition-all group cursor-pointer"
-                                        >
-                                            <div className="bg-gray-100 px-4 py-2 border-b border-gray-300 group-hover:bg-blue-50 transition-colors">
-                                                <h4 className="font-semibold text-gray-700 truncate group-hover:text-blue-700">
-                                                    {team.name}
-                                                </h4>
-                                            </div>
-                                            <div className="p-4 flex justify-between items-center text-gray-500 text-sm group-hover:text-blue-600">
-                                                <span>Click to grade</span>
-                                                <span>→</span>
-                                            </div>
-                                        </button>
-                                    ))}
+                                    .map((team) => {
+                                        const isGraded = gradedIDs.has(team.id);
+                                        return (
+                                            <button
+                                                key={team.id}
+                                                onClick={() =>
+                                                    setSelectedTeam(team)
+                                                }
+                                                className="w-full text-left bg-white rounded-xl border border-gray-300 shadow-md overflow-hidden hover:shadow-lg transition-all group cursor-pointer"
+                                            >
+                                                <div className="bg-gray-100 px-4 py-2 border-b border-gray-300 group-hover:bg-blue-50 transition-colors">
+                                                    <h4 className="font-semibold text-gray-700 truncate group-hover:text-blue-700">
+                                                        {team.name}
+                                                    </h4>
+                                                </div>
+                                                <div className="p-4 flex justify-between items-center text-gray-500 text-sm group-hover:text-blue-600">
+                                                    <div className="flex items-center gap-2">
+                                                        {/* GRADED INDICATOR */}
+                                                        {isGraded ? (
+                                                            <span className="text-green-600 font-bold bg-green-100 px-3 py-1 rounded-full text-xs border border-green-200">
+                                                                ✓ Graded
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-red-600 font-bold bg-red-100 px-3 py-1 rounded-full text-xs border border-red-200">
+                                                                Not Graded
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span>→</span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                             </div>
                         </div>
                     ))}

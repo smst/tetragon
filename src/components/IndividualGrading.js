@@ -103,6 +103,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
             .eq("competitor_id", selectedStudent.id);
 
         // 2. Generate rows for ALL 20 questions (Default to false if not clicked)
+        // FIX: Loop 1-20 explicitly so "0 correct" saves as 20 incorrect answers.
         const rows = Array.from({ length: 20 }, (_, i) => i + 1).map(
             (qNum) => ({
                 competitor_id: selectedStudent.id,
@@ -189,24 +190,28 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                                                     student,
                                                                 )
                                                             }
-                                                            className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:shadow-sm hover:text-blue-700 rounded-lg flex justify-between items-center group cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg flex justify-between items-center group cursor-pointer"
                                                         >
                                                             <div className="flex items-center gap-2">
                                                                 {/* GRADED INDICATOR */}
-                                                                <div className="w-4 flex justify-center">
-                                                                    {isGraded ? (
-                                                                        <span className="text-green-600 font-bold text-xs">
-                                                                            ✓
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="w-2 h-2 rounded-full bg-gray-200"></span>
-                                                                    )}
-                                                                </div>
                                                                 <span>
                                                                     {
                                                                         student.name
                                                                     }
                                                                 </span>
+                                                                <div className="w-20 flex justify-center">
+                                                                    {isGraded ? (
+                                                                        <span className="text-green-600 font-bold bg-green-100 px-1.5 py-0.5 rounded-full text-xs border border-green-200">
+                                                                            ✓
+                                                                            Graded
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full text-xs border border-red-200">
+                                                                            Not
+                                                                            Graded
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             <span className="text-gray-500 group-hover:text-blue-600">
                                                                 →
