@@ -11,6 +11,8 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
     // Track which students have been graded to show indicators
     const [gradedIDs, setGradedIDs] = useState(new Set());
+    // New state to prevent "Not Graded" flash
+    const [loadingGradedStatus, setLoadingGradedStatus] = useState(true);
 
     // --- 1. GROUPING LOGIC ---
     const groupedData = useMemo(() => {
@@ -36,6 +38,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
     // --- 2. FETCH GRADED STATUS (On Mount) ---
     useEffect(() => {
         const fetchGradedStatus = async () => {
+            setLoadingGradedStatus(true);
             const tableName = `${roundType}_round_responses`;
             const { data } = await supabase
                 .from(tableName)
@@ -46,6 +49,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                 const ids = new Set(data.map((row) => row.competitor_id));
                 setGradedIDs(ids);
             }
+            setLoadingGradedStatus(false);
         };
 
         fetchGradedStatus();
@@ -103,7 +107,6 @@ export default function IndividualGrading({ competitors, roundType, title }) {
             .eq("competitor_id", selectedStudent.id);
 
         // 2. Generate rows for ALL 20 questions (Default to false if not clicked)
-        // FIX: Loop 1-20 explicitly so "0 correct" saves as 20 incorrect answers.
         const rows = Array.from({ length: 20 }, (_, i) => i + 1).map(
             (qNum) => ({
                 competitor_id: selectedStudent.id,
@@ -193,7 +196,6 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                                             className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg flex justify-between items-center group cursor-pointer"
                                                         >
                                                             <div className="flex items-center gap-2">
-                                                                {/* GRADED INDICATOR */}
                                                                 <span>
                                                                     {
                                                                         student.name
@@ -201,7 +203,11 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                                                                 </span>
                                                             </div>
                                                             <span className="text-gray-500 group-hover:text-blue-600">
-                                                                {isGraded ? (
+                                                                {loadingGradedStatus ? (
+                                                                    <span className="text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full text-xs border border-gray-200">
+                                                                        Loading...
+                                                                    </span>
+                                                                ) : isGraded ? (
                                                                     <span className="text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full text-xs border border-green-200">
                                                                         Graded
                                                                     </span>

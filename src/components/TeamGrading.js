@@ -11,6 +11,8 @@ export default function TeamGrading({ teams }) {
 
     // Track which teams have been graded
     const [gradedIDs, setGradedIDs] = useState(new Set());
+    // New state to prevent "Not Graded" flash
+    const [loadingGradedStatus, setLoadingGradedStatus] = useState(true);
 
     // --- 1. GROUPING LOGIC (Room View) ---
     const groupedData = useMemo(() => {
@@ -32,6 +34,7 @@ export default function TeamGrading({ teams }) {
     // --- 2. FETCH GRADED STATUS ---
     useEffect(() => {
         const fetchGradedStatus = async () => {
+            setLoadingGradedStatus(true);
             const { data } = await supabase
                 .from("team_round_responses")
                 .select("team_id");
@@ -40,6 +43,7 @@ export default function TeamGrading({ teams }) {
                 const ids = new Set(data.map((row) => row.team_id));
                 setGradedIDs(ids);
             }
+            setLoadingGradedStatus(false);
         };
         fetchGradedStatus();
     }, []);
@@ -93,7 +97,6 @@ export default function TeamGrading({ teams }) {
             .eq("team_id", selectedTeam.id);
 
         // 2. Prepare rows for ALL 10 questions
-        // FIX: Loop 1-10 explicitly so that "0 correct" is still saved as 10 incorrect answers.
         const rows = Array.from({ length: 10 }, (_, i) => i + 1).map(
             (qNum) => ({
                 team_id: selectedTeam.id,
@@ -170,12 +173,16 @@ export default function TeamGrading({ teams }) {
                                                 <div className="p-4 flex justify-between items-center text-gray-500 text-sm group-hover:text-blue-600">
                                                     <div className="flex items-center gap-2">
                                                         {/* GRADED INDICATOR */}
-                                                        {isGraded ? (
+                                                        {loadingGradedStatus ? (
+                                                            <span className="text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full text-xs border border-gray-200">
+                                                                Loading...
+                                                            </span>
+                                                        ) : isGraded ? (
                                                             <span className="text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full text-xs border border-green-200">
                                                                 Graded
                                                             </span>
                                                         ) : (
-                                                            <span className="text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs border border-red-200">
+                                                            <span className="text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full text-xs border border-red-200">
                                                                 Not Graded
                                                             </span>
                                                         )}
