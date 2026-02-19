@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { ProctorSchedule } from "@/types";
 
 export default function SchedulePanel() {
-    const [schedule, setSchedule] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [schedule, setSchedule] = useState<ProctorSchedule[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         const fetchSchedule = async () => {
@@ -19,7 +20,7 @@ export default function SchedulePanel() {
                 .eq("user_id", session.user.id)
                 .order("start_time", { ascending: true });
 
-            if (data) setSchedule(data);
+            if (data) setSchedule(data as ProctorSchedule[]);
             setLoading(false);
         };
         fetchSchedule();
@@ -28,6 +29,7 @@ export default function SchedulePanel() {
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Schedule</h2>
+
             {loading ? (
                 <div className="animate-pulse flex space-x-4">
                     <div className="flex-1 space-y-4 py-1">

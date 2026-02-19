@@ -12,7 +12,7 @@ export default function GradingPanel() {
 
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-            <div className="flex flex-col gap-4 mb-6 border-b border-gray-200 pb-6">
+            <div className="flex flex-col gap-4 mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Grading</h2>
                 <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-full sm:w-max overflow-x-auto">
                     {[
@@ -41,14 +41,12 @@ export default function GradingPanel() {
                     <IndividualGrading
                         competitors={competitors}
                         roundType="math"
-                        title="Math Individual Round"
                     />
                 )}
                 {activeTab === "science" && (
                     <IndividualGrading
                         competitors={competitors}
                         roundType="science"
-                        title="Science Individual Round"
                     />
                 )}
                 {activeTab === "team" && <TeamGrading teams={teams} />}

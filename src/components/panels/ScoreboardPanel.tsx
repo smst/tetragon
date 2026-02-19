@@ -3,13 +3,42 @@ import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useTournamentData } from "@/hooks/useTournamentData";
 
+// Define allowed sort keys
+type SortKey =
+    | "name"
+    | "grade"
+    | "math"
+    | "science"
+    | "total"
+    | "team_round_score"
+    | "design_round_score"
+    | "overall_score";
+
+// Define a unified row type so TypeScript knows what variables are allowed in the map function
+interface ScoreboardRow {
+    id: string;
+    name: string;
+    grade?: string | number;
+    math?: number;
+    science?: number;
+    total?: number;
+    team_round_score?: number;
+    design_round_score?: number;
+    overall_score?: number;
+}
+
 export default function ScoreboardPanel() {
     // Connect directly to SWR cache
     const { competitors, teams, refreshData } = useTournamentData();
 
-    const [activeTab, setActiveTab] = useState("individual");
+    const [activeTab, setActiveTab] = useState<
+        "individual" | "team" | "design"
+    >("individual");
     const [gradeFilter, setGradeFilter] = useState("all");
-    const [sortConfig, setSortConfig] = useState({
+    const [sortConfig, setSortConfig] = useState<{
+        key: SortKey;
+        direction: "asc" | "desc";
+    }>({
         key: "total",
         direction: "desc",
     });
@@ -40,14 +69,14 @@ export default function ScoreboardPanel() {
 
             if (!res.ok) throw new Error("Calculation failed");
             await refreshData(); // Instantly syncs the UI
-        } catch (err) {
+        } catch (err: any) {
             alert("Error: " + err.message);
         } finally {
             setLoadingScore(false);
         }
     };
 
-    const processedData = useMemo(() => {
+    const processedData = useMemo<ScoreboardRow[]>(() => {
         if (activeTab === "individual") {
             return competitors
                 .filter(
@@ -56,7 +85,9 @@ export default function ScoreboardPanel() {
                         String(c.grade) === gradeFilter,
                 )
                 .map((c) => ({
-                    ...c,
+                    id: c.id,
+                    name: c.name,
+                    grade: c.grade,
                     math: c.math_round_score || 0,
                     science: c.science_round_score || 0,
                     total:
@@ -65,7 +96,8 @@ export default function ScoreboardPanel() {
                 }));
         } else {
             return teams.map((t) => ({
-                ...t,
+                id: t.id,
+                name: t.name,
                 team_round_score: t.team_round_score || 0,
                 design_round_score: t.design_round_score || 0,
                 overall_score: t.overall_score || 0,
@@ -75,7 +107,7 @@ export default function ScoreboardPanel() {
 
     const sortedData = useMemo(() => {
         let sorted = [...processedData];
-        sorted.sort((a, b) => {
+        sorted.sort((a: Record<string, any>, b: Record<string, any>) => {
             const valA = a[sortConfig.key];
             const valB = b[sortConfig.key];
             if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
@@ -85,15 +117,15 @@ export default function ScoreboardPanel() {
         return sorted;
     }, [processedData, sortConfig]);
 
-    const requestSort = (key) => {
-        let direction = "desc";
+    const requestSort = (key: SortKey) => {
+        let direction: "asc" | "desc" = "desc";
         if (sortConfig.key === key && sortConfig.direction === "desc") {
             direction = "asc";
         }
         setSortConfig({ key, direction });
     };
 
-    const getClassNamesFor = (name) => {
+    const getClassNamesFor = (name: SortKey) => {
         if (sortConfig.key !== name)
             return "text-gray-400 opacity-0 group-hover:opacity-50";
         return sortConfig.direction === "asc"
@@ -101,12 +133,18 @@ export default function ScoreboardPanel() {
             : "text-blue-700";
     };
 
-    const SortableHeader = ({ label, sortKey, isHighlighted }) => (
+    const SortableHeader = ({
+        label,
+        sortKey,
+    }: {
+        label: string;
+        sortKey: SortKey;
+    }) => (
         <th
             onClick={() => requestSort(sortKey)}
-            className={`group px-6 py-3 text-left text-xs font-medium uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none ${
-                isHighlighted ? "text-gray-900 bg-gray-100" : "text-gray-500"
-            }`}
+            className={
+                "group px-6 py-3 text-left text-xs font-medium uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none text-gray-500"
+            }
         >
             <div className="flex items-center gap-1">
                 {label}
@@ -154,7 +192,7 @@ export default function ScoreboardPanel() {
                         ].map((tab) => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => setActiveTab(tab.id as any)}
                                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                                     activeTab === tab.id
                                         ? "bg-white shadow text-blue-700"
@@ -186,7 +224,7 @@ export default function ScoreboardPanel() {
 
                 <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                        <div className="shadow-md overflow-hidden border border-gray-300 rounded-xl bg-white mb-5">
+                        <div className="shadow-md overflow-hidden border border-gray-300 rounded-xl bg-gray-200 mb-5">
                             <table className="min-w-full border-collapse">
                                 <thead className="bg-gray-50 border-b border-gray-300">
                                     <tr>
@@ -214,7 +252,6 @@ export default function ScoreboardPanel() {
                                                 <SortableHeader
                                                     label="Overall"
                                                     sortKey="total"
-                                                    isHighlighted={true}
                                                 />
                                             </>
                                         )}
@@ -235,7 +272,6 @@ export default function ScoreboardPanel() {
                                                 <SortableHeader
                                                     label="Overall"
                                                     sortKey="overall_score"
-                                                    isHighlighted={true}
                                                 />
                                             </>
                                         )}
@@ -248,7 +284,6 @@ export default function ScoreboardPanel() {
                                                 <SortableHeader
                                                     label="Design Score"
                                                     sortKey="design_round_score"
-                                                    isHighlighted={true}
                                                 />
                                             </>
                                         )}
@@ -272,13 +307,15 @@ export default function ScoreboardPanel() {
                                                         {row.grade || "-"}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.math.toFixed(3)}
+                                                        {row.math?.toFixed(3)}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.science.toFixed(3)}
+                                                        {row.science?.toFixed(
+                                                            3,
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
-                                                        {row.total.toFixed(3)}
+                                                        {row.total?.toFixed(3)}
                                                     </td>
                                                 </>
                                             )}
@@ -288,17 +325,17 @@ export default function ScoreboardPanel() {
                                                         {row.name}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.team_round_score.toFixed(
+                                                        {row.team_round_score?.toFixed(
                                                             3,
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.design_round_score.toFixed(
+                                                        {row.design_round_score?.toFixed(
                                                             3,
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
-                                                        {row.overall_score.toFixed(
+                                                        {row.overall_score?.toFixed(
                                                             3,
                                                         )}
                                                     </td>
@@ -310,7 +347,7 @@ export default function ScoreboardPanel() {
                                                         {row.name}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
-                                                        {row.design_round_score.toFixed(
+                                                        {row.design_round_score?.toFixed(
                                                             3,
                                                         )}
                                                     </td>
@@ -321,7 +358,7 @@ export default function ScoreboardPanel() {
                                     {sortedData.length === 0 && (
                                         <tr>
                                             <td
-                                                colSpan="6"
+                                                colSpan={6}
                                                 className="px-6 py-8 text-center text-sm text-gray-500"
                                             >
                                                 No data available.

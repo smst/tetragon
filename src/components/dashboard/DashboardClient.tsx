@@ -2,6 +2,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { useTournamentData } from "@/hooks/useTournamentData";
+import { UserRole } from "@/types";
 
 // Sub-Panels
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -10,12 +11,19 @@ import GradingPanel from "@/components/panels/GradingPanel";
 import ScoreboardPanel from "@/components/panels/ScoreboardPanel";
 import StaffManagement from "@/components/panels/StaffManagementPanel";
 import AttendancePanel from "@/components/panels/AttendancePanel";
-import ProctorGuide from "@/components/panels/ProctorGuidePanel";
+import ProctorGuidePanel from "@/components/panels/ProctorGuidePanel";
 
-export default function DashboardClient({ userEmail, userRole }) {
+// Define the props this component expects
+interface DashboardClientProps {
+    userEmail: string;
+    userRole: UserRole;
+}
+
+export default function DashboardClient({
+    userEmail,
+    userRole,
+}: DashboardClientProps) {
     const router = useRouter();
-
-    // SWR takes over entirely
     const { isLoading, isError } = useTournamentData();
 
     const handleLogout = async () => {
@@ -56,7 +64,7 @@ export default function DashboardClient({ userEmail, userRole }) {
         <div className="space-y-8">
             <SchedulePanel />
             <AttendancePanel />
-            <ProctorGuide />
+            <ProctorGuidePanel />
         </div>
     );
 
