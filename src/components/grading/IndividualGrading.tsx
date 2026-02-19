@@ -1,25 +1,37 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { Competitor } from "@/types";
+import { useTournamentData } from "@/hooks/useTournamentData";
 
-export default function IndividualGrading({ competitors, roundType }) {
-    // --- STATE ---
-    const [selectedStudent, setSelectedStudent] = useState(null);
-    const [responses, setResponses] = useState({});
-    const [status, setStatus] = useState("");
-    const [loadingData, setLoadingData] = useState(false);
+interface IndividualGradingProps {
+    competitors: Competitor[];
+    roundType: "math" | "science";
+}
 
-    // Track which students have been graded to show indicators
-    const [gradedIDs, setGradedIDs] = useState(new Set());
-    // New state to prevent "Not Graded" flash
-    const [loadingGradedStatus, setLoadingGradedStatus] = useState(true);
+export default function IndividualGrading({
+    competitors,
+    roundType,
+}: IndividualGradingProps) {
+    const [selectedStudent, setSelectedStudent] = useState<Competitor | null>(
+        null,
+    );
+    const [responses, setResponses] = useState<Record<number, boolean>>({});
+    const [status, setStatus] = useState<string>("");
+    const [loadingData, setLoadingData] = useState<boolean>(false);
+
+    const [gradedIDs, setGradedIDs] = useState<Set<string>>(new Set());
+    const [loadingGradedStatus, setLoadingGradedStatus] =
+        useState<boolean>(true);
+
+    const { refreshData } = useTournamentData();
 
     // --- 1. GROUPING LOGIC ---
     const groupedData = useMemo(() => {
-        const groups = {};
+        const groups: Record<string, Record<string, Competitor[]>> = {};
 
         competitors.forEach((c) => {
-            const room = c.team?.room || "Unassigned Room";
+            const room = c.team?.room?.toString() || "Unassigned Room";
             const teamName = c.team?.name || "No Team";
 
             if (!groups[room]) groups[room] = {};
@@ -45,8 +57,12 @@ export default function IndividualGrading({ competitors, roundType }) {
                 .select("competitor_id");
 
             if (data) {
-                // Create a Set of unique IDs that have at least one response row
-                const ids = new Set(data.map((row) => row.competitor_id));
+                const ids = new Set<string>(
+                    data.map(
+                        (row: Record<string, any>) =>
+                            row.competitor_id as string,
+                    ),
+                );
                 setGradedIDs(ids);
             }
             setLoadingGradedStatus(false);
@@ -72,9 +88,10 @@ export default function IndividualGrading({ competitors, roundType }) {
             if (error) {
                 setStatus("Error loading data");
             } else if (data && data.length > 0) {
-                const loadedResponses = {};
-                data.forEach((row) => {
-                    loadedResponses[row.question_number] = row.is_correct;
+                const loadedResponses: Record<number, boolean> = {};
+                data.forEach((row: Record<string, any>) => {
+                    loadedResponses[row.question_number as number] =
+                        row.is_correct as boolean;
                 });
                 setResponses(loadedResponses);
                 setStatus("Loaded saved grades.");
@@ -89,7 +106,7 @@ export default function IndividualGrading({ competitors, roundType }) {
     }, [selectedStudent, roundType]);
 
     // --- 4. HANDLERS ---
-    const toggleAnswer = (qNum) => {
+    const toggleAnswer = (qNum: number) => {
         setResponses((prev) => ({ ...prev, [qNum]: !prev[qNum] }));
         setStatus("Unsaved changes!");
     };
@@ -100,22 +117,19 @@ export default function IndividualGrading({ competitors, roundType }) {
 
         const tableName = `${roundType}_round_responses`;
 
-        // 1. Delete old responses to ensure clean slate
         await supabase
             .from(tableName)
             .delete()
             .eq("competitor_id", selectedStudent.id);
 
-        // 2. Generate rows for ALL 20 questions (Default to false if not clicked)
         const rows = Array.from({ length: 20 }, (_, i) => i + 1).map(
             (qNum) => ({
                 competitor_id: selectedStudent.id,
                 question_number: qNum,
-                is_correct: !!responses[qNum], // Forces true/false
+                is_correct: !!responses[qNum],
             }),
         );
 
-        // 3. Insert new rows
         const { error } = await supabase.from(tableName).insert(rows);
 
         if (error) {
@@ -123,17 +137,16 @@ export default function IndividualGrading({ competitors, roundType }) {
             return;
         }
 
-        // 4. Update UI State
+        await refreshData();
         setStatus("Saved successfully!");
-        setGradedIDs((prev) => new Set(prev).add(selectedStudent.id)); // Add checkmark immediately
+        setGradedIDs((prev) => new Set(prev).add(selectedStudent.id));
         setSelectedStudent(null);
     };
 
     return (
         <div className="space-y-6">
-            {/* --- VIEW 1: THE ROOM LIST --- */}
             {!selectedStudent && (
-                <div className="space-y-8">
+                <div className="space-y-8 mt-2">
                     {groupedData.sortedRooms.length === 0 && (
                         <p className="text-gray-500 italic">
                             No competitors found.
@@ -215,7 +228,6 @@ export default function IndividualGrading({ competitors, roundType }) {
                 </div>
             )}
 
-            {/* --- VIEW 2: THE GRADING PAD --- */}
             {selectedStudent && (
                 <div>
                     <div
@@ -255,13 +267,13 @@ export default function IndividualGrading({ competitors, roundType }) {
                                         key={num}
                                         onClick={() => toggleAnswer(num)}
                                         className={`
-                                            h-12 w-full rounded-full text-lg font-bold transition-all shadow-sm border cursor-pointer
-                                            ${
-                                                responses[num]
-                                                    ? "bg-green-600 text-white border-green-700 hover:bg-green-700 hover:border-green-800 shadow-green-800"
-                                                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
-                                            }
-                                        `}
+                                                h-12 w-full rounded-full text-lg font-bold transition-all shadow-sm border cursor-pointer
+                                                ${
+                                                    responses[num]
+                                                        ? "bg-green-600 text-white border-green-700 hover:bg-green-700 hover:border-green-800 shadow-green-800"
+                                                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                                                }
+                                            `}
                                     >
                                         {num}
                                     </button>

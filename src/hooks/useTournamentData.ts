@@ -1,7 +1,14 @@
 import useSWR from "swr";
 import { supabase } from "@/lib/supabaseClient";
+import { Competitor, Team } from "@/types";
 
-const fetcher = async () => {
+// Define the exact shape of our cache
+interface TournamentData {
+    competitors: Competitor[];
+    teams: Team[];
+}
+
+const fetcher = async (): Promise<TournamentData> => {
     const [compRes, teamRes] = await Promise.all([
         supabase
             .from("competitors")
@@ -14,16 +21,20 @@ const fetcher = async () => {
     if (teamRes.error) throw teamRes.error;
 
     return {
-        competitors: compRes.data || [],
-        teams: teamRes.data || [],
+        competitors: (compRes.data as Competitor[]) || [],
+        teams: (teamRes.data as Team[]) || [],
     };
 };
 
 export function useTournamentData() {
-    const { data, error, mutate } = useSWR("tournamentData", fetcher, {
-        refreshInterval: 5000, // Background poll every 5 seconds
-        revalidateOnFocus: true, // Refresh instantly when tab is clicked
-    });
+    const { data, error, mutate } = useSWR<TournamentData>(
+        "tournamentData",
+        fetcher,
+        {
+            refreshInterval: 5000,
+            revalidateOnFocus: true,
+        },
+    );
 
     return {
         competitors: data?.competitors || [],

@@ -1,25 +1,31 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { Team } from "@/types";
+import { useTournamentData } from "@/hooks/useTournamentData";
 
-export default function TeamGrading({ teams }) {
-    // --- STATE ---
-    const [selectedTeam, setSelectedTeam] = useState(null);
-    const [responses, setResponses] = useState({});
-    const [status, setStatus] = useState("");
-    const [loadingData, setLoadingData] = useState(false);
+interface TeamGradingProps {
+    teams: Team[];
+}
 
-    // Track which teams have been graded
-    const [gradedIDs, setGradedIDs] = useState(new Set());
-    // New state to prevent "Not Graded" flash
-    const [loadingGradedStatus, setLoadingGradedStatus] = useState(true);
+export default function TeamGrading({ teams }: TeamGradingProps) {
+    const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+    const [responses, setResponses] = useState<Record<number, boolean>>({});
+    const [status, setStatus] = useState<string>("");
+    const [loadingData, setLoadingData] = useState<boolean>(false);
+
+    const [gradedIDs, setGradedIDs] = useState<Set<string>>(new Set());
+    const [loadingGradedStatus, setLoadingGradedStatus] =
+        useState<boolean>(true);
+
+    const { refreshData } = useTournamentData();
 
     // --- 1. GROUPING LOGIC (Room View) ---
     const groupedData = useMemo(() => {
-        const groups = {};
+        const groups: Record<string, Team[]> = {};
 
         teams.forEach((t) => {
-            const room = t.room || "Unassigned Room";
+            const room = t.room?.toString() || "Unassigned Room";
             if (!groups[room]) groups[room] = [];
             groups[room].push(t);
         });
@@ -40,7 +46,11 @@ export default function TeamGrading({ teams }) {
                 .select("team_id");
 
             if (data) {
-                const ids = new Set(data.map((row) => row.team_id));
+                const ids = new Set<string>(
+                    data.map(
+                        (row: Record<string, any>) => row.team_id as string,
+                    ),
+                );
                 setGradedIDs(ids);
             }
             setLoadingGradedStatus(false);
@@ -64,9 +74,10 @@ export default function TeamGrading({ teams }) {
             if (error) {
                 setStatus("Error loading data");
             } else if (data && data.length > 0) {
-                const loadedResponses = {};
-                data.forEach((row) => {
-                    loadedResponses[row.question_number] = row.is_correct;
+                const loadedResponses: Record<number, boolean> = {};
+                data.forEach((row: Record<string, any>) => {
+                    loadedResponses[row.question_number as number] =
+                        row.is_correct as boolean;
                 });
                 setResponses(loadedResponses);
                 setStatus("Loaded saved grades.");
@@ -81,7 +92,7 @@ export default function TeamGrading({ teams }) {
     }, [selectedTeam]);
 
     // --- 4. HANDLERS ---
-    const toggleAnswer = (qNum) => {
+    const toggleAnswer = (qNum: number) => {
         setResponses((prev) => ({ ...prev, [qNum]: !prev[qNum] }));
         setStatus("Unsaved changes!");
     };
@@ -90,22 +101,19 @@ export default function TeamGrading({ teams }) {
         if (!selectedTeam) return;
         setStatus("Saving...");
 
-        // 1. Delete old
         await supabase
             .from("team_round_responses")
             .delete()
             .eq("team_id", selectedTeam.id);
 
-        // 2. Prepare rows for ALL 10 questions
         const rows = Array.from({ length: 10 }, (_, i) => i + 1).map(
             (qNum) => ({
                 team_id: selectedTeam.id,
                 question_number: qNum,
-                is_correct: !!responses[qNum], // Forces boolean true/false
+                is_correct: !!responses[qNum],
             }),
         );
 
-        // 3. Insert new
         const { error } = await supabase
             .from("team_round_responses")
             .insert(rows);
@@ -115,16 +123,16 @@ export default function TeamGrading({ teams }) {
             return;
         }
 
+        await refreshData();
         setStatus("Saved successfully!");
-        setGradedIDs((prev) => new Set(prev).add(selectedTeam.id)); // Optimistic update
+        setGradedIDs((prev) => new Set(prev).add(selectedTeam.id));
         setSelectedTeam(null);
     };
 
     return (
         <div className="space-y-6">
-            {/* --- VIEW 1: THE ROOM LIST --- */}
             {!selectedTeam && (
-                <div className="space-y-8">
+                <div className="space-y-8 mt-2">
                     {groupedData.sortedRooms.length === 0 && (
                         <p className="text-gray-500 italic">No teams found.</p>
                     )}
@@ -157,7 +165,6 @@ export default function TeamGrading({ teams }) {
                                                 </div>
                                                 <div className="p-4 flex justify-between items-center text-gray-500 text-sm group-hover:text-blue-600">
                                                     <div className="flex items-center gap-2">
-                                                        {/* GRADED INDICATOR */}
                                                         {loadingGradedStatus ? (
                                                             <span className="text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full text-xs border border-gray-200">
                                                                 Loading...
@@ -182,7 +189,7 @@ export default function TeamGrading({ teams }) {
                     ))}
                 </div>
             )}
-            {/* --- VIEW 2: THE GRADING PAD --- */}
+
             {selectedTeam && (
                 <div>
                     <div
@@ -219,13 +226,13 @@ export default function TeamGrading({ teams }) {
                                         key={num}
                                         onClick={() => toggleAnswer(num)}
                                         className={`
-                                            h-12 w-full rounded-full text-lg font-bold transition-all shadow-sm border cursor-pointer
-                                            ${
-                                                responses[num]
-                                                    ? "bg-green-600 text-white border-green-700 hover:bg-green-700 hover:border-green-800 shadow-green-800"
-                                                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
-                                            }
-                                        `}
+                                                h-12 w-full rounded-full text-lg font-bold transition-all shadow-sm border cursor-pointer
+                                                ${
+                                                    responses[num]
+                                                        ? "bg-green-600 text-white border-green-700 hover:bg-green-700 hover:border-green-800 shadow-green-800"
+                                                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                                                }
+                                            `}
                                     >
                                         {num}
                                     </button>

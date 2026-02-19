@@ -1,17 +1,27 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { UserRole } from "@/types";
+
+interface StaffMember {
+    id: string;
+    email: string;
+    role: UserRole;
+    last_sign_in: string | null;
+}
+
+type ModalType = "delete" | "role" | "invite" | null;
 
 export default function StaffManagementPanel() {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [users, setUsers] = useState<StaffMember[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
 
     // -- Modals State --
-    const [modalType, setModalType] = useState(null); // 'delete' | 'role' | 'invite'
-    const [targetUser, setTargetUser] = useState(null);
-    const [pendingRole, setPendingRole] = useState(null);
-    const [inviteEmail, setInviteEmail] = useState(""); // State for the input
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [modalType, setModalType] = useState<ModalType>(null);
+    const [targetUser, setTargetUser] = useState<StaffMember | null>(null);
+    const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
+    const [inviteEmail, setInviteEmail] = useState<string>("");
+    const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
     useEffect(() => {
         fetchUsers();
@@ -31,8 +41,8 @@ export default function StaffManagementPanel() {
             if (!res.ok) throw new Error("Failed to fetch users");
             const data = await res.json();
             setUsers(data.users);
-        } catch (err) {
-            alert(err.message);
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "An error occurred");
         } finally {
             setLoading(false);
         }
@@ -44,8 +54,8 @@ export default function StaffManagementPanel() {
         setModalType("invite");
     };
 
-    const confirmInvite = async (e) => {
-        e.preventDefault(); // Prevent form submission refresh
+    const confirmInvite = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
         setIsProcessing(true);
         const {
             data: { session },
@@ -55,7 +65,7 @@ export default function StaffManagementPanel() {
             const res = await fetch("/api/admin/users", {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${session.access_token}`,
+                    Authorization: `Bearer ${session!.access_token}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ email: inviteEmail }),
@@ -67,16 +77,16 @@ export default function StaffManagementPanel() {
             }
 
             alert("Invitation sent successfully!");
-            await fetchUsers(); // Refresh list to show new user
+            await fetchUsers();
             closeModal();
-        } catch (err) {
-            alert(err.message);
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "An error occurred");
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const initiateRoleChange = (user, newRole) => {
+    const initiateRoleChange = (user: StaffMember, newRole: UserRole) => {
         setTargetUser(user);
         setPendingRole(newRole);
         setModalType("role");
@@ -91,11 +101,11 @@ export default function StaffManagementPanel() {
         const res = await fetch("/api/admin/users", {
             method: "PATCH",
             headers: {
-                Authorization: `Bearer ${session.access_token}`,
+                Authorization: `Bearer ${session!.access_token}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                userId: targetUser.id,
+                userId: targetUser!.id,
                 newRole: pendingRole,
             }),
         });
@@ -103,7 +113,7 @@ export default function StaffManagementPanel() {
         if (res.ok) {
             setUsers(
                 users.map((u) =>
-                    u.id === targetUser.id ? { ...u, role: pendingRole } : u,
+                    u.id === targetUser!.id ? { ...u, role: pendingRole! } : u,
                 ),
             );
             closeModal();
@@ -113,7 +123,7 @@ export default function StaffManagementPanel() {
         }
     };
 
-    const initiateDelete = (user) => {
+    const initiateDelete = (user: StaffMember) => {
         setTargetUser(user);
         setModalType("delete");
     };
@@ -127,14 +137,14 @@ export default function StaffManagementPanel() {
         const res = await fetch("/api/admin/users", {
             method: "DELETE",
             headers: {
-                Authorization: `Bearer ${session.access_token}`,
+                Authorization: `Bearer ${session!.access_token}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ userId: targetUser.id }),
+            body: JSON.stringify({ userId: targetUser!.id }),
         });
 
         if (res.ok) {
-            setUsers(users.filter((u) => u.id !== targetUser.id));
+            setUsers(users.filter((u) => u.id !== targetUser!.id));
             closeModal();
         } else {
             alert("Failed to delete user");
@@ -165,7 +175,6 @@ export default function StaffManagementPanel() {
                     <h2 className="text-xl font-bold text-gray-900">
                         Staff Management
                     </h2>
-                    {/* NEW: Create Proctor Button */}
                     <button
                         onClick={initiateInvite}
                         className="px-8 py-2.5 shadow-md shadow-blue-300 bg-blue-600 hover:bg-blue-700 text-md text-white font-medium rounded-xl transition-all active:scale-95 cursor-pointer"
@@ -214,7 +223,7 @@ export default function StaffManagementPanel() {
                                             onChange={(e) =>
                                                 initiateRoleChange(
                                                     user,
-                                                    e.target.value,
+                                                    e.target.value as UserRole,
                                                 )
                                             }
                                             className="cursor-pointer block w-full max-w-35 py-1.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"

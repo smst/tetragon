@@ -1,18 +1,19 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useTournamentData } from "@/hooks/useTournamentData";
 
+type CheckInPeriod = "Morning Arrival" | "Post-Lunch" | "Award Ceremony";
+
 export default function AttendancePanel() {
-    // Connect directly to SWR
     const { competitors } = useTournamentData();
 
-    const [period, setPeriod] = useState("Morning Arrival");
-    const [status, setStatus] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
-    const [presentIds, setPresentIds] = useState(new Set());
+    const [period, setPeriod] = useState<CheckInPeriod>("Morning Arrival");
+    const [status, setStatus] = useState<string>("");
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [presentIds, setPresentIds] = useState<Set<string>>(new Set());
 
-    const toggleAttendance = (id) => {
+    const toggleAttendance = (id: string) => {
         const newSet = new Set(presentIds);
         if (newSet.has(id)) newSet.delete(id);
         else newSet.add(id);
@@ -26,7 +27,11 @@ export default function AttendancePanel() {
         const {
             data: { session },
         } = await supabase.auth.getSession();
-        if (!session) return;
+        if (!session) {
+            setStatus("Error: Not authenticated.");
+            setIsSaving(false);
+            return;
+        }
 
         const payload = Array.from(presentIds).map((compId) => ({
             competitor_id: compId,
@@ -59,7 +64,9 @@ export default function AttendancePanel() {
                 <h2 className="text-xl font-bold text-gray-900">Roll Call</h2>
                 <select
                     value={period}
-                    onChange={(e) => setPeriod(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        setPeriod(e.target.value as CheckInPeriod)
+                    }
                     className="border border-gray-300 rounded-md py-1.5 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm cursor-pointer"
                 >
                     <option value="Morning Arrival">Morning Arrival</option>

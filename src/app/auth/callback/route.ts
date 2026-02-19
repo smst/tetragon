@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-export async function GET(request) {
+export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url);
     const code = searchParams.get("code");
     // "next" is where we want to send the user after login (e.g. /reset-password)
@@ -11,8 +11,8 @@ export async function GET(request) {
     if (code) {
         const cookieStore = await cookies();
         const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+            process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
             {
                 cookies: {
                     getAll() {
