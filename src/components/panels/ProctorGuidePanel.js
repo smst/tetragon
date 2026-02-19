@@ -1,4 +1,4 @@
-export default function ProctorView({ competitors }) {
+export default function ProctorGuidePanel({ competitors }) {
     return (
         <div className="space-y-8">
             <section className="pt-8">

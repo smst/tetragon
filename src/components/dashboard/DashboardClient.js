@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { useTournamentData } from "@/hooks/useTournamentData";
 
 // Sub-Panels
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -12,44 +12,35 @@ import StaffManagement from "@/components/panels/StaffManagementPanel";
 import AttendancePanel from "@/components/panels/AttendancePanel";
 import ProctorGuide from "@/components/panels/ProctorGuidePanel";
 
-export default function DashboardClient({
-    initialCompetitors,
-    initialTeams,
-    userEmail,
-    userRole,
-}) {
+export default function DashboardClient({ userEmail, userRole }) {
     const router = useRouter();
-    const [competitors, setCompetitors] = useState(initialCompetitors);
-    const [teams, setTeams] = useState(initialTeams);
 
-    const refreshData = async () => {
-        const { data: compData } = await supabase
-            .from("competitors")
-            .select(`*, team:teams(id, name, room)`)
-            .order("name");
-        const { data: teamData } = await supabase
-            .from("teams")
-            .select("*")
-            .order("name");
-
-        if (compData) setCompetitors(compData);
-        if (teamData) setTeams(teamData);
-    };
+    // SWR takes over entirely
+    const { isLoading, isError } = useTournamentData();
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
         router.refresh();
     };
 
+    if (isError)
+        return (
+            <div className="p-8 text-center text-red-500 mt-10 font-bold">
+                Error loading tournament data. Check your connection.
+            </div>
+        );
+    if (isLoading)
+        return (
+            <div className="p-8 text-center text-gray-500 animate-pulse mt-10">
+                Syncing live tournament data...
+            </div>
+        );
+
     const renderAdminView = () => (
         <div className="space-y-8">
             <SchedulePanel />
-            <GradingPanel competitors={competitors} teams={teams} />
-            <ScoreboardPanel
-                competitors={competitors}
-                teams={teams}
-                refreshData={refreshData}
-            />
+            <GradingPanel />
+            <ScoreboardPanel />
             <StaffManagement />
         </div>
     );
@@ -57,14 +48,14 @@ export default function DashboardClient({
     const renderGraderView = () => (
         <div className="space-y-8">
             <SchedulePanel />
-            <GradingPanel competitors={competitors} teams={teams} />
+            <GradingPanel />
         </div>
     );
 
     const renderProctorView = () => (
         <div className="space-y-8">
             <SchedulePanel />
-            <AttendancePanel competitors={competitors} />
+            <AttendancePanel />
             <ProctorGuide />
         </div>
     );

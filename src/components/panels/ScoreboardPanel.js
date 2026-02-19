@@ -1,12 +1,12 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useTournamentData } from "@/hooks/useTournamentData";
 
-export default function Scoreboard({
-    competitors = [],
-    teams = [],
-    refreshData,
-}) {
+export default function ScoreboardPanel() {
+    // Connect directly to SWR cache
+    const { competitors, teams, refreshData } = useTournamentData();
+
     const [activeTab, setActiveTab] = useState("individual");
     const [gradeFilter, setGradeFilter] = useState("all");
     const [sortConfig, setSortConfig] = useState({
@@ -39,7 +39,7 @@ export default function Scoreboard({
             });
 
             if (!res.ok) throw new Error("Calculation failed");
-            if (refreshData) await refreshData();
+            await refreshData(); // Instantly syncs the UI
         } catch (err) {
             alert("Error: " + err.message);
         } finally {
@@ -78,7 +78,6 @@ export default function Scoreboard({
         sorted.sort((a, b) => {
             const valA = a[sortConfig.key];
             const valB = b[sortConfig.key];
-
             if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
             if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
             return 0;
@@ -325,8 +324,7 @@ export default function Scoreboard({
                                                 colSpan="6"
                                                 className="px-6 py-8 text-center text-sm text-gray-500"
                                             >
-                                                No data available for this
-                                                category.
+                                                No data available.
                                             </td>
                                         </tr>
                                     )}

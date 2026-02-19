@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function StaffManagement() {
+export default function StaffManagementPanel() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 

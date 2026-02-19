@@ -1,16 +1,15 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useTournamentData } from "@/hooks/useTournamentData";
 
-export default function AttendancePanel({ competitors }) {
+export default function AttendancePanel() {
+    // Connect directly to SWR
+    const { competitors } = useTournamentData();
+
     const [period, setPeriod] = useState("Morning Arrival");
     const [status, setStatus] = useState("");
     const [isSaving, setIsSaving] = useState(false);
-
-    // In a real scenario, you'd filter competitors by the proctor's assigned room here.
-    const roomCompetitors = competitors;
-
-    // Track which students are marked present locally before saving
     const [presentIds, setPresentIds] = useState(new Set());
 
     const toggleAttendance = (id) => {
@@ -29,7 +28,6 @@ export default function AttendancePanel({ competitors }) {
         } = await supabase.auth.getSession();
         if (!session) return;
 
-        // Build payload for all checked students
         const payload = Array.from(presentIds).map((compId) => ({
             competitor_id: compId,
             recorded_by: session.user.id,
@@ -50,7 +48,7 @@ export default function AttendancePanel({ competitors }) {
             setStatus("Error: " + error.message);
         } else {
             setStatus("Attendance logged successfully!");
-            setPresentIds(newSet()); // Clear after save
+            setPresentIds(new Set());
         }
         setIsSaving(false);
     };
@@ -86,7 +84,7 @@ export default function AttendancePanel({ competitors }) {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {roomCompetitors.map((c) => (
+                        {competitors.map((c) => (
                             <tr
                                 key={c.id}
                                 className="hover:bg-gray-50 transition-colors"
