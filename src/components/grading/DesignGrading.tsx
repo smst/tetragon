@@ -1,26 +1,37 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Team } from "@/types";
 import { useTournamentData } from "@/hooks/useTournamentData";
 
-interface TeamGradingProps {
+// --- SCORING CONSTANTS ---
+const M_AVAILABLE =
+    parseFloat(process.env.NEXT_PUBLIC_DESIGN_KIT_MASS || "85") || 85;
+const K = parseFloat(process.env.NEXT_PUBLIC_DESIGN_K_MULTIPLIER || "1") || 1;
+
+interface DesignGradingProps {
     teams: Team[];
 }
 
-export default function TeamGrading({ teams }: TeamGradingProps) {
+export default function DesignGrading({ teams }: DesignGradingProps) {
     const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-    const [responses, setResponses] = useState<Record<number, boolean>>({});
-    const [status, setStatus] = useState<string>("");
-    const [loadingData, setLoadingData] = useState<boolean>(false);
+    const [status, setStatus] = useState("");
+    const [loadingData, setLoadingData] = useState(false);
+
+    const [massUsed, setMassUsed] = useState<string | number>("");
+    const [isFinished, setIsFinished] = useState(false);
+    const [timeTaken, setTimeTaken] = useState<string | number>("");
+    const [distanceTraveled, setDistanceTraveled] = useState<string | number>(
+        "",
+    );
+    const [calculatedScore, setCalculatedScore] = useState<number>(0);
 
     const [gradedIDs, setGradedIDs] = useState<Set<string>>(new Set());
-    const [loadingGradedStatus, setLoadingGradedStatus] =
-        useState<boolean>(true);
+    const [loadingGradedStatus, setLoadingGradedStatus] = useState(true);
 
     const { refreshData } = useTournamentData();
 
-    // --- 1. GROUPING LOGIC (Room View) ---
+    // --- 1. GROUPING LOGIC ---
     const groupedData = useMemo(() => {
         const groups: Record<string, Team[]> = {};
 
@@ -42,15 +53,11 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         const fetchGradedStatus = async () => {
             setLoadingGradedStatus(true);
             const { data } = await supabase
-                .from("team_round_responses")
+                .from("design_challenge_entries")
                 .select("team_id");
 
             if (data) {
-                const ids = new Set<string>(
-                    data.map(
-                        (row: Record<string, any>) => row.team_id as string,
-                    ),
-                );
+                const ids = new Set<string>(data.map((row) => row.team_id));
                 setGradedIDs(ids);
             }
             setLoadingGradedStatus(false);
@@ -58,79 +65,105 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         fetchGradedStatus();
     }, []);
 
-    // --- 3. FETCH SCORES ---
+    // --- 3. CALCULATE SCORE ---
+    useEffect(() => {
+        const m_used = parseFloat(massUsed.toString());
+
+        if (!m_used || m_used <= 0) {
+            setCalculatedScore(0);
+            return;
+        }
+
+        let velocity = 0;
+
+        if (isFinished) {
+            const t = parseFloat(timeTaken.toString());
+            if (t > 0) {
+                velocity = 60 / t;
+            }
+        } else {
+            const d = parseFloat(distanceTraveled.toString());
+            if (d >= 0) {
+                velocity = d / 30;
+            }
+        }
+
+        const materialMultiplier = Math.sqrt(M_AVAILABLE / m_used);
+        const score = K * Math.sqrt(velocity * Math.sqrt(materialMultiplier));
+
+        setCalculatedScore(score);
+    }, [massUsed, isFinished, timeTaken, distanceTraveled]);
+
+    // --- 4. FETCH EXISTING DATA ---
     useEffect(() => {
         if (!selectedTeam) return;
 
-        const loadSavedTeamGrades = async () => {
+        const loadSavedData = async () => {
             setLoadingData(true);
             setStatus("Checking for saved data...");
 
-            const { data, error } = await supabase
-                .from("team_round_responses")
-                .select("question_number, is_correct")
-                .eq("team_id", selectedTeam.id);
+            setMassUsed("");
+            setIsFinished(false);
+            setTimeTaken("");
+            setDistanceTraveled("");
+            setCalculatedScore(0);
 
-            if (error) {
+            const { data, error } = await supabase
+                .from("design_challenge_entries")
+                .select("*")
+                .eq("team_id", selectedTeam.id)
+                .single();
+
+            if (error && error.code !== "PGRST116") {
                 setStatus("Error loading data");
-            } else if (data && data.length > 0) {
-                const loadedResponses: Record<number, boolean> = {};
-                data.forEach((row: Record<string, any>) => {
-                    loadedResponses[row.question_number as number] =
-                        row.is_correct as boolean;
-                });
-                setResponses(loadedResponses);
+            } else if (data) {
+                setMassUsed(data.mass_used || "");
+                setIsFinished(data.is_finished || false);
+                setTimeTaken(data.time_taken || "");
+                setDistanceTraveled(data.distance_traveled || "");
                 setStatus("Loaded saved grades.");
             } else {
-                setResponses({});
                 setStatus("No previous grades found.");
             }
             setLoadingData(false);
         };
 
-        loadSavedTeamGrades();
+        loadSavedData();
     }, [selectedTeam]);
 
-    // --- 4. HANDLERS ---
-    const toggleAnswer = (qNum: number) => {
-        setResponses((prev) => ({ ...prev, [qNum]: !prev[qNum] }));
-        setStatus("Unsaved changes!");
-    };
-
+    // --- 5. HANDLERS ---
     const handleSave = async () => {
         if (!selectedTeam) return;
         setStatus("Saving...");
 
-        await supabase
-            .from("team_round_responses")
-            .delete()
-            .eq("team_id", selectedTeam.id);
-
-        const rows = Array.from({ length: 10 }, (_, i) => i + 1).map(
-            (qNum) => ({
-                team_id: selectedTeam.id,
-                question_number: qNum,
-                is_correct: !!responses[qNum],
-            }),
-        );
+        const payload = {
+            team_id: selectedTeam.id,
+            mass_used: parseFloat(massUsed.toString()) || 0,
+            is_finished: isFinished,
+            time_taken: isFinished ? parseFloat(timeTaken.toString()) || 0 : 30,
+            distance_traveled: isFinished
+                ? 60
+                : parseFloat(distanceTraveled.toString()) || 0,
+            final_score: calculatedScore,
+        };
 
         const { error } = await supabase
-            .from("team_round_responses")
-            .insert(rows);
+            .from("design_challenge_entries")
+            .upsert(payload, { onConflict: "team_id" });
 
         if (error) {
             setStatus("Error: " + error.message);
-            return;
+        } else {
+            await refreshData();
+            setStatus("Saved successfully!");
+            setGradedIDs((prev) => new Set(prev).add(selectedTeam.id));
+            setSelectedTeam(null);
         }
-
-        await refreshData();
-        setStatus("Saved successfully!");
-        setGradedIDs((prev) => new Set(prev).add(selectedTeam.id));
-        setSelectedTeam(null);
     };
 
     return (
         <div className="space-y-6">
+            {/* --- VIEW 1: THE ROOM LIST --- */}
             {!selectedTeam && (
                 <div className="space-y-8 mt-2">
                     {groupedData.sortedRooms.length === 0 && (
@@ -190,6 +223,7 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
                 </div>
             )}
 
+            {/* --- VIEW 2: THE GRADING PAD --- */}
             {selectedTeam && (
                 <div>
                     <div
@@ -213,30 +247,112 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
                         </div>
                     ) : (
                         <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-md">
-                            <p className="text-md text-gray-500 mb-4 font-medium">
-                                Select Correct Answers (1&ndash;10)
-                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Mass Used (grams)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={85}
+                                        value={massUsed}
+                                        onChange={(e) =>
+                                            setMassUsed(e.target.value)
+                                        }
+                                        placeholder="e.g. 23"
+                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border"
+                                    />
+                                </div>
 
-                            <div className="grid grid-cols-5 gap-3 mb-8">
-                                {Array.from(
-                                    { length: 10 },
-                                    (_, i) => i + 1,
-                                ).map((num) => (
-                                    <button
-                                        key={num}
-                                        onClick={() => toggleAnswer(num)}
-                                        className={`
-                                                h-12 w-full rounded-full text-lg font-bold transition-all shadow-sm border cursor-pointer
-                                                ${
-                                                    responses[num]
-                                                        ? "bg-green-600 text-white border-green-700 hover:bg-green-700 hover:border-green-800 shadow-green-800"
-                                                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
-                                                }
-                                            `}
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Result
+                                    </label>
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={() => {
+                                                setIsFinished(true);
+                                                setDistanceTraveled("60");
+                                            }}
+                                            className={`flex-1 py-3 px-4 rounded-lg border font-medium transition-all cursor-pointer shadow-sm ${
+                                                isFinished
+                                                    ? "bg-green-600 text-white border-green-700 shadow-green-800"
+                                                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                                            }`}
+                                        >
+                                            Finished
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setIsFinished(false);
+                                                setTimeTaken("30");
+                                            }}
+                                            className={`flex-1 py-3 px-4 rounded-lg border font-medium transition-all cursor-pointer shadow-sm ${
+                                                !isFinished
+                                                    ? "bg-blue-600 text-white border-blue-700 shadow-blue-800"
+                                                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                                            }`}
+                                        >
+                                            Did Not Finish
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {isFinished ? (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Time to Finish (seconds)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={30}
+                                            value={timeTaken}
+                                            onChange={(e) =>
+                                                setTimeTaken(e.target.value)
+                                            }
+                                            placeholder="e.g. 12"
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 p-3 border"
+                                        />
+                                        <p className="text-xs text-green-600 mt-2 ml-1">
+                                            Distance fixed at 60 inches.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Distance Traveled (inches)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={60}
+                                            value={distanceTraveled}
+                                            onChange={(e) =>
+                                                setDistanceTraveled(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="e.g. 45"
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border"
+                                        />
+                                        <p className="text-xs text-blue-600 mt-2 ml-1">
+                                            Time fixed at 30 seconds.
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 flex flex-col justify-center">
+                                    <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+                                        Calculated Score
+                                    </span>
+                                    <span className="text-3xl font-bold text-gray-800 mt-1">
+                                        {isFinite(calculatedScore)
+                                            ? calculatedScore.toFixed(2)
+                                            : "0.00"}
+                                    </span>
+                                </div>
                             </div>
 
                             <div className="flex items-center justify-end gap-3 border-t border-gray-300 pt-6">

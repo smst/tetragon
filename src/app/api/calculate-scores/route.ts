@@ -47,7 +47,9 @@ export async function POST(request: Request) {
         ] = await Promise.all([
             supabaseAdmin.from("math_round_responses").select("*"),
             supabaseAdmin.from("science_round_responses").select("*"),
-            supabaseAdmin.from("team_round_responses").select("*"),
+            supabaseAdmin
+                .from("team_round_responses")
+                .select("team_id, is_correct, points_possible"),
             supabaseAdmin.from("design_challenge_entries").select("*"),
             supabaseAdmin.from("competitors").select("id, team_id"),
             supabaseAdmin.from("teams").select("id"),
@@ -55,6 +57,7 @@ export async function POST(request: Request) {
 
         const totalCompetitors = competitors?.length || 1;
 
+        // Individual round scoring (unchanged)
         const calculateRoundScores = (responses: any[]) => {
             const correctCounts: Record<string, number> = {};
             responses.forEach((r) => {
@@ -123,10 +126,12 @@ export async function POST(request: Request) {
             teamStats[c.team_id].members += 1;
         });
 
+        // Team round: sum points_possible for each correct response
         if (teamResponses) {
             teamResponses.forEach((r) => {
                 if (r.is_correct && teamStats[r.team_id]) {
-                    teamStats[r.team_id].teamRound += 5;
+                    teamStats[r.team_id].teamRound +=
+                        Number(r.points_possible) || 0;
                 }
             });
         }

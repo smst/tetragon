@@ -12,8 +12,8 @@ import ScoreboardPanel from "@/components/panels/ScoreboardPanel";
 import StaffManagement from "@/components/panels/StaffManagementPanel";
 import AttendancePanel from "@/components/panels/AttendancePanel";
 import ProctorGuidePanel from "@/components/panels/ProctorGuidePanel";
+import ConfigPanel from "@/components/panels/ConfigPanel";
 
-// Define the props this component expects
 interface DashboardClientProps {
     userEmail: string;
     userRole: UserRole;
@@ -50,6 +50,7 @@ export default function DashboardClient({
             <GradingPanel />
             <ScoreboardPanel />
             <StaffManagement />
+            <ConfigPanel />
         </div>
     );
 

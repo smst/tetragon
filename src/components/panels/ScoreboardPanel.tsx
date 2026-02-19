@@ -187,8 +187,8 @@ export default function ScoreboardPanel() {
                     <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
                         {[
                             { id: "individual", label: "Individuals" },
-                            { id: "team", label: "Teams (Cumulative)" },
-                            { id: "design", label: "Design Challenge" },
+                            { id: "team", label: "Teams" },
+                            { id: "design", label: "Design" },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -222,152 +222,148 @@ export default function ScoreboardPanel() {
                     )}
                 </div>
 
-                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                    <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                        <div className="shadow-md overflow-hidden border border-gray-300 rounded-xl bg-gray-200 mb-5">
-                            <table className="min-w-full border-collapse">
-                                <thead className="bg-gray-50 border-b border-gray-300">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Rank
-                                        </th>
+                <div className="shadow-md rounded-xl mb-5">
+                    <div className="border border-gray-300 rounded-xl overflow-x-auto">
+                        <table className="min-w-full border-collapse">
+                            <thead className="bg-gray-50 border-b border-gray-300">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">
+                                        Rank
+                                    </th>
+                                    {activeTab === "individual" && (
+                                        <>
+                                            <SortableHeader
+                                                label="Name"
+                                                sortKey="name"
+                                            />
+                                            <SortableHeader
+                                                label="Grade"
+                                                sortKey="grade"
+                                            />
+                                            <SortableHeader
+                                                label="Math"
+                                                sortKey="math"
+                                            />
+                                            <SortableHeader
+                                                label="Science"
+                                                sortKey="science"
+                                            />
+                                            <SortableHeader
+                                                label="Overall"
+                                                sortKey="total"
+                                            />
+                                        </>
+                                    )}
+                                    {activeTab === "team" && (
+                                        <>
+                                            <SortableHeader
+                                                label="Team Name"
+                                                sortKey="name"
+                                            />
+                                            <SortableHeader
+                                                label="Team Round"
+                                                sortKey="team_round_score"
+                                            />
+                                            <SortableHeader
+                                                label="Design"
+                                                sortKey="design_round_score"
+                                            />
+                                            <SortableHeader
+                                                label="Overall"
+                                                sortKey="overall_score"
+                                            />
+                                        </>
+                                    )}
+                                    {activeTab === "design" && (
+                                        <>
+                                            <SortableHeader
+                                                label="Team Name"
+                                                sortKey="name"
+                                            />
+                                            <SortableHeader
+                                                label="Design Score"
+                                                sortKey="design_round_score"
+                                            />
+                                        </>
+                                    )}
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                                {sortedData.map((row, index) => (
+                                    <tr
+                                        key={row.id}
+                                        className="border-b border-gray-200 hover:bg-blue-50 transition-colors last:border-0"
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            #{index + 1}
+                                        </td>
                                         {activeTab === "individual" && (
                                             <>
-                                                <SortableHeader
-                                                    label="Name"
-                                                    sortKey="name"
-                                                />
-                                                <SortableHeader
-                                                    label="Grade"
-                                                    sortKey="grade"
-                                                />
-                                                <SortableHeader
-                                                    label="Math"
-                                                    sortKey="math"
-                                                />
-                                                <SortableHeader
-                                                    label="Science"
-                                                    sortKey="science"
-                                                />
-                                                <SortableHeader
-                                                    label="Overall"
-                                                    sortKey="total"
-                                                />
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {row.name}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                    {row.grade || "-"}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                    {row.math?.toFixed(3)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                    {row.science?.toFixed(3)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
+                                                    {row.total?.toFixed(3)}
+                                                </td>
                                             </>
                                         )}
                                         {activeTab === "team" && (
                                             <>
-                                                <SortableHeader
-                                                    label="Team Name"
-                                                    sortKey="name"
-                                                />
-                                                <SortableHeader
-                                                    label="Team Round"
-                                                    sortKey="team_round_score"
-                                                />
-                                                <SortableHeader
-                                                    label="Design"
-                                                    sortKey="design_round_score"
-                                                />
-                                                <SortableHeader
-                                                    label="Overall"
-                                                    sortKey="overall_score"
-                                                />
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {row.name}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                    {row.team_round_score?.toFixed(
+                                                        3,
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                    {row.design_round_score?.toFixed(
+                                                        3,
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
+                                                    {row.overall_score?.toFixed(
+                                                        3,
+                                                    )}
+                                                </td>
                                             </>
                                         )}
                                         {activeTab === "design" && (
                                             <>
-                                                <SortableHeader
-                                                    label="Team Name"
-                                                    sortKey="name"
-                                                />
-                                                <SortableHeader
-                                                    label="Design Score"
-                                                    sortKey="design_round_score"
-                                                />
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {row.name}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
+                                                    {row.design_round_score?.toFixed(
+                                                        3,
+                                                    )}
+                                                </td>
                                             </>
                                         )}
                                     </tr>
-                                </thead>
-                                <tbody className="bg-white">
-                                    {sortedData.map((row, index) => (
-                                        <tr
-                                            key={row.id}
-                                            className="border-b border-gray-200 hover:bg-blue-50 transition-colors last:border-0"
+                                ))}
+                                {sortedData.length === 0 && (
+                                    <tr>
+                                        <td
+                                            colSpan={6}
+                                            className="px-6 py-8 text-center text-sm text-gray-500"
                                         >
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                #{index + 1}
-                                            </td>
-                                            {activeTab === "individual" && (
-                                                <>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {row.name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.grade || "-"}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.math?.toFixed(3)}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.science?.toFixed(
-                                                            3,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
-                                                        {row.total?.toFixed(3)}
-                                                    </td>
-                                                </>
-                                            )}
-                                            {activeTab === "team" && (
-                                                <>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {row.name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.team_round_score?.toFixed(
-                                                            3,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        {row.design_round_score?.toFixed(
-                                                            3,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
-                                                        {row.overall_score?.toFixed(
-                                                            3,
-                                                        )}
-                                                    </td>
-                                                </>
-                                            )}
-                                            {activeTab === "design" && (
-                                                <>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {row.name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
-                                                        {row.design_round_score?.toFixed(
-                                                            3,
-                                                        )}
-                                                    </td>
-                                                </>
-                                            )}
-                                        </tr>
-                                    ))}
-                                    {sortedData.length === 0 && (
-                                        <tr>
-                                            <td
-                                                colSpan={6}
-                                                className="px-6 py-8 text-center text-sm text-gray-500"
-                                            >
-                                                No data available.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                                            No data available.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

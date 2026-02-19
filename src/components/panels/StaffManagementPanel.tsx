@@ -169,21 +169,20 @@ export default function StaffManagementPanel() {
 
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-            {" "}
-            <div className="overflow-hidden">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">
-                        Staff Management
-                    </h2>
-                    <button
-                        onClick={initiateInvite}
-                        className="px-8 py-2.5 shadow-md shadow-blue-300 bg-blue-600 hover:bg-blue-700 text-md text-white font-medium rounded-xl transition-all active:scale-95 cursor-pointer"
-                    >
-                        Create New User
-                    </button>
-                </div>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                    Staff Management
+                </h2>
+                <button
+                    onClick={initiateInvite}
+                    className="px-8 py-2.5 shadow-md shadow-blue-300 bg-blue-600 hover:bg-blue-700 text-md text-white font-medium rounded-xl transition-all active:scale-95 cursor-pointer"
+                >
+                    Create New User
+                </button>
+            </div>
 
-                <div className="shadow-md border border-gray-300 rounded-xl overflow-hidden mb-5">
+            <div className="shadow-md rounded-xl mb-5">
+                <div className="border border-gray-300 rounded-xl overflow-x-auto">
                     <table className="min-w-full border-collapse">
                         <thead className="bg-gray-100">
                             <tr className="border-b border-gray-300">
