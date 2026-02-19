@@ -2,42 +2,44 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-// 1. Add 'request' as an argument to the function
+// Ensures that the request comes from an authenticated user.
+async function checkAdmin(request) {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    );
+
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.split(" ")[1];
+
+    if (!token) throw new Error("Missing Token");
+
+    const {
+        data: { user },
+        error,
+    } = await supabase.auth.getUser(token);
+    if (error || !user) throw new Error("Invalid Token");
+
+    const { data: roleData } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+    if (roleData?.role !== "admin")
+        throw new Error("Unauthorized: Admins only");
+
+    return user;
+}
+
+// Handle a POST request to the route.
 export async function POST(request) {
     console.log("--- STARTING ALGORITHM ---");
 
     try {
-        // --- SECURITY CHECK ---
-        // Verify the user is logged in before running expensive calculations
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        );
+        await checkAdmin(request);
 
-        const authHeader = request.headers.get("Authorization");
-        const token = authHeader?.split(" ")[1]; // Remove "Bearer " prefix
-
-        if (!token) {
-            return NextResponse.json(
-                { error: "Missing Authorization Token" },
-                { status: 401 },
-            );
-        }
-
-        const {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser(token);
-
-        if (authError || !user) {
-            return NextResponse.json(
-                { error: "Unauthorized: Invalid Token" },
-                { status: 401 },
-            );
-        }
-
-        // --- CALCULATION LOGIC ---
-        // 1. FETCH EVERYTHING
+        // Fetch all data.
         const [
             { data: mathResponses },
             { data: scienceResponses },
@@ -52,11 +54,10 @@ export async function POST(request) {
             supabaseAdmin.from("competitors").select("id, team_id"),
         ]);
 
-        const totalCompetitors = competitors.length || 1; // Avoid divide by zero
+        const totalCompetitors = competitors.length || 1;
 
-        // --- HELPER: THE ALGORITHM ---
+        // Define calculation function for individual rounds.
         const calculateRoundScores = (responses) => {
-            // Step A: Count how many people got each question correct
             const correctCounts = {};
             responses.forEach((r) => {
                 if (r.is_correct) {
@@ -65,7 +66,6 @@ export async function POST(request) {
                 }
             });
 
-            // Step B: Calculate the "Value" of each question
             const questionValues = {};
             Object.keys(correctCounts).forEach((qNum) => {
                 const correctCount = correctCounts[qNum];
@@ -73,7 +73,6 @@ export async function POST(request) {
                 questionValues[qNum] = 1 + Math.sqrt(1 - x);
             });
 
-            // Step C: Assign points to students
             const studentScores = {};
             responses.forEach((r) => {
                 if (r.is_correct) {
@@ -86,11 +85,11 @@ export async function POST(request) {
             return studentScores;
         };
 
-        // 2. RUN CALCULATIONS
+        // Calculate scores for individual rounds.
         const mathScores = calculateRoundScores(mathResponses || []);
         const scienceScores = calculateRoundScores(scienceResponses || []);
 
-        // 3. UPDATE COMPETITORS
+        // Update individual scores.
         console.log(`Updating ${competitors.length} competitors...`);
         const compUpdates = competitors.map((comp) => ({
             id: comp.id,
@@ -105,11 +104,10 @@ export async function POST(request) {
         if (compError)
             throw new Error("Competitor Update Error: " + compError.message);
 
-        // 4. CALCULATE TEAM SCORES
+        // Calculate team scores.
         console.log("Calculating Team Aggregate Scores...");
         const teamStats = {};
 
-        // A. Sum up individual scores
         competitors.forEach((c) => {
             if (!c.team_id) return;
             if (!teamStats[c.team_id]) {
@@ -127,7 +125,6 @@ export async function POST(request) {
             teamStats[c.team_id].members += 1;
         });
 
-        // B. Add Team Round
         if (teamResponses) {
             teamResponses.forEach((r) => {
                 if (r.is_correct && teamStats[r.team_id]) {
@@ -136,7 +133,6 @@ export async function POST(request) {
             });
         }
 
-        // C. Add Design Round
         if (designEntries) {
             designEntries.forEach((d) => {
                 if (teamStats[d.team_id]) {
@@ -145,7 +141,7 @@ export async function POST(request) {
             });
         }
 
-        // 5. UPDATE TEAMS
+        // Update team scores.
         const teamUpdates = Object.keys(teamStats).map((teamId) => {
             const s = teamStats[teamId];
             const avgMath = s.members > 0 ? s.mathSum / s.members : 0;

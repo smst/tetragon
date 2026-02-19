@@ -4,8 +4,8 @@ import { supabase } from "@/lib/supabaseClient";
 
 // --- SCORING CONSTANTS ---
 // Adjust these based on the specific tournament kit calibration
-const M_AVAILABLE = 100; // Placeholder for average kit mass (grams)
-const K = 10; // Normalization multiplier (set to 1 for raw scores)
+const M_AVAILABLE = 85; // Placeholder for average kit mass (grams)
+const K = 1; // Normalization multiplier (set to 1 for raw scores)
 
 export default function DesignGrading({ teams }) {
     // --- STATE ---
