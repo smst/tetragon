@@ -158,7 +158,8 @@ export default function StaffManagement() {
         );
 
     return (
-        <>
+        <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
+            {" "}
             <div className="overflow-hidden">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-gray-900">
@@ -244,7 +245,6 @@ export default function StaffManagement() {
                     </table>
                 </div>
             </div>
-
             {/* --- MODAL --- */}
             {modalType && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -359,6 +359,6 @@ export default function StaffManagement() {
                     </div>
                 </div>
             )}
-        </>
+        </section>
     );
 }

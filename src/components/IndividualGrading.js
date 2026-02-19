@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function IndividualGrading({ competitors, roundType, title }) {
+export default function IndividualGrading({ competitors, roundType }) {
     // --- STATE ---
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [responses, setResponses] = useState({});
@@ -131,21 +131,9 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-                {selectedStudent && (
-                    <button
-                        onClick={() => setSelectedStudent(null)}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
-                    >
-                        ← Back to Rooms
-                    </button>
-                )}
-            </div>
-
             {/* --- VIEW 1: THE ROOM LIST --- */}
             {!selectedStudent && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="space-y-8">
                     {groupedData.sortedRooms.length === 0 && (
                         <p className="text-gray-500 italic">
                             No competitors found.
@@ -153,10 +141,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
                     )}
 
                     {groupedData.sortedRooms.map((room) => (
-                        <div
-                            key={room}
-                            className="border-t border-gray-300 pt-6"
-                        >
+                        <div key={room}>
                             <h3 className="text-lg shadow-sm font-bold text-gray-800 mb-4 bg-gray-100 border border-gray-300 inline-block px-3 py-1 rounded-lg">
                                 {room}
                             </h3>
@@ -232,7 +217,7 @@ export default function IndividualGrading({ competitors, roundType, title }) {
 
             {/* --- VIEW 2: THE GRADING PAD --- */}
             {selectedStudent && (
-                <div className="animate-in zoom-in-95 duration-200">
+                <div>
                     <div
                         className={`px-5 py-3 rounded-xl mb-4 text-md font-medium flex flex-col sm:flex-row justify-between items-center gap-2 ${
                             loadingData

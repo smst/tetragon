@@ -4,16 +4,6 @@ export default function ProctorView({ competitors }) {
             <section className="pt-8">
                 <div className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
                     <h2 className="text-xl font-bold text-gray-900 mb-6">
-                        Attendance
-                    </h2>
-
-                    <p className="mt-4 text-gray-600">Work in progress.</p>
-                </div>
-            </section>
-
-            <section className="pt-8">
-                <div className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">
                         Proctor Guide
                     </h2>
 

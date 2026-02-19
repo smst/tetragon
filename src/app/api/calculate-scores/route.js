@@ -46,12 +46,14 @@ export async function POST(request) {
             { data: teamResponses },
             { data: designEntries },
             { data: competitors },
+            { data: teams },
         ] = await Promise.all([
             supabaseAdmin.from("math_round_responses").select("*"),
             supabaseAdmin.from("science_round_responses").select("*"),
             supabaseAdmin.from("team_round_responses").select("*"),
             supabaseAdmin.from("design_challenge_entries").select("*"),
             supabaseAdmin.from("competitors").select("id, team_id"),
+            supabaseAdmin.from("teams").select("id"),
         ]);
 
         const totalCompetitors = competitors.length || 1;
@@ -105,26 +107,32 @@ export async function POST(request) {
             throw new Error("Competitor Update Error: " + compError.message);
 
         // Calculate team scores.
-        console.log("Calculating Team Aggregate Scores...");
+        console.log("Calculating team scores...");
         const teamStats = {};
 
-        competitors.forEach((c) => {
-            if (!c.team_id) return;
-            if (!teamStats[c.team_id]) {
-                teamStats[c.team_id] = {
+        // Initialize teams.
+        if (teams) {
+            teams.forEach((t) => {
+                teamStats[t.id] = {
                     mathSum: 0,
                     sciSum: 0,
                     members: 0,
                     teamRound: 0,
                     design: 0,
                 };
-            }
+            });
+        }
+
+        // Calculate sum of individual scores.
+        competitors.forEach((c) => {
+            if (!c.team_id || !teamStats[c.team_id]) return;
 
             teamStats[c.team_id].mathSum += mathScores[c.id] || 0;
             teamStats[c.team_id].sciSum += scienceScores[c.id] || 0;
             teamStats[c.team_id].members += 1;
         });
 
+        // Calculate team round score.
         if (teamResponses) {
             teamResponses.forEach((r) => {
                 if (r.is_correct && teamStats[r.team_id]) {
@@ -133,6 +141,7 @@ export async function POST(request) {
             });
         }
 
+        // Calculate design challenge score.
         if (designEntries) {
             designEntries.forEach((d) => {
                 if (teamStats[d.team_id]) {
