@@ -2,7 +2,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-// Security Helper: Ensure requester is an Admin
+// Ensures that the request comes from an authenticated user. Returns the user.
 async function checkAdmin(request) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -20,7 +20,6 @@ async function checkAdmin(request) {
     } = await supabase.auth.getUser(token);
     if (error || !user) throw new Error("Invalid Token");
 
-    // Verify role in database
     const { data: roleData } = await supabaseAdmin
         .from("user_roles")
         .select("role")
@@ -30,7 +29,7 @@ async function checkAdmin(request) {
     if (roleData?.role !== "admin")
         throw new Error("Unauthorized: Admins only");
 
-    return true;
+    return user;
 }
 
 export async function GET(request) {
@@ -64,7 +63,6 @@ export async function GET(request) {
     }
 }
 
-// --- NEW POST METHOD ---
 export async function POST(request) {
     try {
         await checkAdmin(request);
@@ -98,8 +96,13 @@ export async function POST(request) {
 
 export async function PATCH(request) {
     try {
-        await checkAdmin(request);
+        const adminUser = await checkAdmin(request);
         const { userId, newRole } = await request.json();
+
+        // Prevent self-modification.
+        if (adminUser.id === userId) {
+            throw new Error("You cannot modify your own role.");
+        }
 
         const { error } = await supabaseAdmin
             .from("user_roles")
@@ -115,13 +118,26 @@ export async function PATCH(request) {
 
 export async function DELETE(request) {
     try {
-        await checkAdmin(request);
+        const adminUser = await checkAdmin(request);
         const { userId } = await request.json();
 
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-        if (error) throw error;
+        // Prevent self-deletion.
+        if (adminUser.id === userId) {
+            throw new Error("You cannot delete your own account.");
+        }
 
-        await supabaseAdmin.from("user_roles").delete().eq("id", userId);
+        // Delete entry from user_roles.
+        const { error: roleError } = await supabaseAdmin
+            .from("user_roles")
+            .delete()
+            .eq("id", userId);
+
+        if (roleError) throw roleError;
+
+        // Delete user from auth.user.
+        const { error: authError } =
+            await supabaseAdmin.auth.admin.deleteUser(userId);
+        if (authError) throw authError;
 
         return NextResponse.json({ success: true });
     } catch (err) {

@@ -2,7 +2,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-// Ensures that the request comes from an authenticated user.
+// Ensures that the request comes from an authenticated user. Returns the user.
 async function checkAdmin(request) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
