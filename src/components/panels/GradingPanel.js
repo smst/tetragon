@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import IndividualGrading from "@/components/IndividualGrading";
-import TeamGrading from "@/components/TeamGrading";
-import DesignGrading from "@/components/DesignGrading";
+import IndividualGrading from "@/components/grading/IndividualGrading";
+import TeamGrading from "@/components/grading/TeamGrading";
+import DesignGrading from "@/components/grading/DesignGrading";
 
 export default function GradingPanel({ competitors, teams }) {
     const [activeTab, setActiveTab] = useState("math");

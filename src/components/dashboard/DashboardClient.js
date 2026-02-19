@@ -4,13 +4,13 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
 // Sub-Panels
-import DashboardHeader from "@/components/DashboardHeader";
-import SchedulePanel from "@/components/SchedulePanel";
-import GradingPanel from "@/components/GradingPanel";
-import ScoreboardPanel from "@/components/ScoreboardPanel";
-import StaffManagement from "@/components/StaffManagement";
-import AttendancePanel from "@/components/AttendancePanel";
-import ProctorGuide from "@/components/ProctorGuide";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import SchedulePanel from "@/components/panels/SchedulePanel";
+import GradingPanel from "@/components/panels/GradingPanel";
+import ScoreboardPanel from "@/components/panels/ScoreboardPanel";
+import StaffManagement from "@/components/panels/StaffManagementPanel";
+import AttendancePanel from "@/components/panels/AttendancePanel";
+import ProctorGuide from "@/components/panels/ProctorGuidePanel";
 
 export default function DashboardClient({
     initialCompetitors,
