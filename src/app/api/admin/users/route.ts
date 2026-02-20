@@ -92,11 +92,6 @@ export async function POST(request: Request) {
                     redirectTo: redirectUrl,
                 });
             if (error) throw error;
-
-            // Seed user_roles row so they appear in the panel immediately
-            await supabaseAdmin
-                .from("user_roles")
-                .upsert({ id: data.user.id, role: "unassigned" });
         }
 
         return NextResponse.json({ success: true });
@@ -135,13 +130,25 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ success: true });
         }
 
-        // Role update — use update, not upsert, to avoid nulling room assignments
+        // Role update — use update, fallback to insert if the row is missing
         if (body.newRole !== undefined) {
-            const { error } = await supabaseAdmin
+            const { data, error } = await supabaseAdmin
                 .from("user_roles")
                 .update({ role: body.newRole })
-                .eq("id", userId);
+                .eq("id", userId)
+                .select();
+
             if (error) throw error;
+
+            // If data is empty, the user was "unassigned" (no row existed). Insert it now.
+            if (!data || data.length === 0) {
+                const { error: insertError } = await supabaseAdmin
+                    .from("user_roles")
+                    .insert({ id: userId, role: body.newRole });
+
+                if (insertError) throw insertError;
+            }
+
             return NextResponse.json({ success: true });
         }
 
