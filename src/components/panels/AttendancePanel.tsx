@@ -227,7 +227,7 @@ function AttendanceSubPanel({
         const win = TIME_WINDOWS[period];
         return (
             <div
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg mb-4 text-sm font-medium ${
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl mb-4 text-md font-medium ${
                     isBeforeWindow
                         ? "bg-gray-100 text-gray-500 border border-gray-200"
                         : "bg-amber-50 text-amber-700 border border-amber-200"
