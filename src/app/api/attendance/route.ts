@@ -131,12 +131,34 @@ export async function POST(request: Request) {
             );
         }
 
-        // ── Overwrite: delete existing logs for this proctor + period + today ─
-        await supabaseAdmin
-            .from("attendance_logs")
-            .delete()
-            .eq("recorded_by", user.id)
-            .eq("check_in_period", period);
+        // ── Overwrite: delete existing logs for the ENTIRE room for this period ─
+
+        // 1. Find all teams in the assigned room
+        const { data: roomTeams } = await supabaseAdmin
+            .from("teams")
+            .select("id")
+            .eq("room", assignedRoom);
+
+        if (roomTeams && roomTeams.length > 0) {
+            const teamIds = roomTeams.map((t) => t.id);
+
+            // 2. Find all competitors on those teams
+            const { data: roomComps } = await supabaseAdmin
+                .from("competitors")
+                .select("id")
+                .in("team_id", teamIds);
+
+            if (roomComps && roomComps.length > 0) {
+                const roomCompIds = roomComps.map((c) => c.id);
+
+                // 3. Delete any existing attendance logs for these competitors
+                await supabaseAdmin
+                    .from("attendance_logs")
+                    .delete()
+                    .eq("check_in_period", period)
+                    .in("competitor_id", roomCompIds);
+            }
+        }
 
         // ── Insert new logs ───────────────────────────────────────────────────
         if (competitorIds.length > 0) {

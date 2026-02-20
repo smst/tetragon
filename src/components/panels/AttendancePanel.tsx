@@ -107,16 +107,24 @@ function AttendanceSubPanel({
         const {
             data: { session },
         } = await supabase.auth.getSession();
-        if (!session) {
+
+        if (!session || roomCompetitors.length === 0) {
+            setHasExisting(false);
+            setPresentIds(new Set());
+            setStatus("");
             setLoadingExisting(false);
             return;
         }
 
+        // Get the IDs of all students supposed to be in this room
+        const roomCompIds = roomCompetitors.map((c) => c.id);
+
+        // Fetch logs for these specific students, regardless of which proctor submitted it
         const { data, error } = await supabase
             .from("attendance_logs")
             .select("competitor_id")
-            .eq("recorded_by", session.user.id)
-            .eq("check_in_period", period);
+            .eq("check_in_period", period)
+            .in("competitor_id", roomCompIds);
 
         if (error) {
             console.error("fetchExisting error:", error.message);
@@ -136,7 +144,7 @@ function AttendanceSubPanel({
             setStatus("");
         }
         setLoadingExisting(false);
-    }, [period]);
+    }, [period, roomCompetitors]); // Added roomCompetitors to dependency array
 
     useEffect(() => {
         fetchExisting();
