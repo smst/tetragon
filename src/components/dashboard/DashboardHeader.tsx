@@ -12,6 +12,16 @@ export default function DashboardHeader({
     role,
     onLogout,
 }: DashboardHeaderProps) {
+    const roleStyles: Record<string, string> = {
+        admin: "text-purple-700 bg-purple-50 border-purple-200",
+        grader: "text-blue-700 bg-blue-50 border-blue-200",
+        proctor: "text-green-700 bg-green-50 border-green-200",
+        unassigned: "text-gray-500 bg-gray-50 border-gray-200",
+    };
+
+    const currentRoleStyle =
+        roleStyles[role.toLowerCase()] ?? roleStyles.unassigned;
+
     return (
         <nav className="bg-white border-b border-gray-300 shadow-md sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,7 +30,9 @@ export default function DashboardHeader({
                         <h1 className="text-xl font-sans font-bold text-gray-900">
                             SMST Dashboard
                         </h1>
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-purple-100 text-purple-800">
+                        <span
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${currentRoleStyle}`}
+                        >
                             {role}
                         </span>
                     </div>
