@@ -73,38 +73,23 @@ export async function POST(request: Request) {
         if (!email) throw new Error("Email is required");
 
         if (resend) {
-            // For users who haven't confirmed yet: re-invite
-            // For users who have confirmed: send a password reset email
-            // We check confirmed_at to decide which to use
-            const { data: existingUsers } =
-                await supabaseAdmin.auth.admin.listUsers();
-            const existing = existingUsers?.users.find(
-                (u) => u.email === email,
-            );
-            if (!existing) throw new Error("User not found");
-
-            if (!existing.confirmed_at) {
-                // Never confirmed — resend the original invite email
-                const { error } =
-                    await supabaseAdmin.auth.admin.inviteUserByEmail(email);
-                if (error) throw error;
-            } else {
-                // Already confirmed — send a password reset email (actually delivers)
-                // Note: requires a non-admin client pointing at the correct redirect URL
-                const supabaseClient = createClient(
-                    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-                );
-                const { error } =
-                    await supabaseClient.auth.resetPasswordForEmail(email, {
-                        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
-                    });
-                if (error) throw error;
-            }
+            // generateLink creates a magic link and sends it via email.
+            // Works for both confirmed and unconfirmed users.
+            // The confirm page handles implicit-flow hash tokens, so no PKCE needed.
+            const { error } = await supabaseAdmin.auth.admin.generateLink({
+                type: "magiclink",
+                email,
+                options: {
+                    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/reset-password`,
+                },
+            });
+            if (error) throw error;
         } else {
             // Invite new user — creates auth record + sends email
             const { data, error } =
-                await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+                await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+                    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/reset-password`,
+                });
             if (error) throw error;
 
             // Seed user_roles row so they appear in the panel immediately
