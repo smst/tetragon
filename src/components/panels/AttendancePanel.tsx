@@ -9,7 +9,7 @@ const TIMEZONE = "America/New_York";
 
 const TIME_WINDOWS = {
     Morning: { openHour: 9, openMin: 30, closeHour: 9, closeMin: 45 },
-    Afternoon: { openHour: 12, openMin: 15, closeHour: 22, closeMin: 0 },
+    Afternoon: { openHour: 12, openMin: 15, closeHour: 13, closeMin: 0 },
 } as const;
 
 type Period = keyof typeof TIME_WINDOWS;
