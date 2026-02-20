@@ -580,17 +580,12 @@ function AdminAttendanceView({ competitors }: { competitors: Competitor[] }) {
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Room
                             </th>
-                            {(["Morning", "Afternoon"] as Period[]).map((p) => (
-                                <th
-                                    key={p}
-                                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    {p}
-                                    <span className="ml-1 font-normal text-gray-400 normal-case">
-                                        {windowLabel(p)}
-                                    </span>
-                                </th>
-                            ))}
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Morning
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Afternoon
+                            </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Competitors
                             </th>

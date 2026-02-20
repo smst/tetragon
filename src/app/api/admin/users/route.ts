@@ -8,16 +8,14 @@ async function checkAdmin(request: Request) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
     );
 
-    const authHeader = request.headers.get("Authorization");
-    const token = authHeader?.split(" ")[1];
-
-    if (!token) throw new Error("Missing Token");
+    const token = request.headers.get("Authorization")?.split(" ")[1];
+    if (!token) throw new Error("Missing token");
 
     const {
         data: { user },
         error,
     } = await supabase.auth.getUser(token);
-    if (error || !user) throw new Error("Invalid Token");
+    if (error || !user) throw new Error("Invalid token");
 
     const { data: roleData } = await supabaseAdmin
         .from("user_roles")
@@ -31,24 +29,31 @@ async function checkAdmin(request: Request) {
     return user;
 }
 
+// ── GET: list all users with roles, rooms, and last sign-in ──────────────────
+
 export async function GET(request: Request) {
     try {
         await checkAdmin(request);
-        const { data: users, error } =
+
+        const { data: authData, error: authError } =
             await supabaseAdmin.auth.admin.listUsers();
-        if (error) throw error;
+        if (authError) throw authError;
 
         const { data: roles, error: rolesError } = await supabaseAdmin
             .from("user_roles")
-            .select("*");
+            .select("id, role, morning_room, afternoon_room");
         if (rolesError) throw rolesError;
 
-        const merged = users.users.map((u) => {
+        const merged = authData.users.map((u) => {
             const r = roles.find((role) => role.id === u.id);
             return {
                 id: u.id,
                 email: u.email,
-                role: r?.role || "unassigned",
+                // last_sign_in_at comes from auth.users via admin API
+                last_sign_in: u.last_sign_in_at ?? null,
+                role: r?.role ?? "unassigned",
+                morning_room: r?.morning_room ?? null,
+                afternoon_room: r?.afternoon_room ?? null,
             };
         });
 
@@ -58,20 +63,55 @@ export async function GET(request: Request) {
     }
 }
 
-export async function PATCH(request: Request) {
+// ── POST: invite new user or resend invite ───────────────────────────────────
+
+export async function POST(request: Request) {
     try {
-        const adminUser = await checkAdmin(request);
-        const { userId, newRole } = await request.json();
+        await checkAdmin(request);
+        const { email, resend } = await request.json();
 
-        if (adminUser.id === userId) {
-            throw new Error("Action denied: You cannot modify your own role.");
+        if (!email) throw new Error("Email is required");
+
+        if (resend) {
+            // For users who haven't confirmed yet: re-invite
+            // For users who have confirmed: send a password reset email
+            // We check confirmed_at to decide which to use
+            const { data: existingUsers } =
+                await supabaseAdmin.auth.admin.listUsers();
+            const existing = existingUsers?.users.find(
+                (u) => u.email === email,
+            );
+            if (!existing) throw new Error("User not found");
+
+            if (!existing.confirmed_at) {
+                // Never confirmed — resend the original invite email
+                const { error } =
+                    await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+                if (error) throw error;
+            } else {
+                // Already confirmed — send a password reset email (actually delivers)
+                // Note: requires a non-admin client pointing at the correct redirect URL
+                const supabaseClient = createClient(
+                    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+                );
+                const { error } =
+                    await supabaseClient.auth.resetPasswordForEmail(email, {
+                        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+                    });
+                if (error) throw error;
+            }
+        } else {
+            // Invite new user — creates auth record + sends email
+            const { data, error } =
+                await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+            if (error) throw error;
+
+            // Seed user_roles row so they appear in the panel immediately
+            await supabaseAdmin
+                .from("user_roles")
+                .upsert({ id: data.user.id, role: "unassigned" });
         }
-
-        const { error } = await supabaseAdmin
-            .from("user_roles")
-            .upsert({ id: userId, role: newRole });
-
-        if (error) throw error;
 
         return NextResponse.json({ success: true });
     } catch (err: any) {
@@ -79,22 +119,69 @@ export async function PATCH(request: Request) {
     }
 }
 
+// ── PATCH: update role OR room assignments ───────────────────────────────────
+
+export async function PATCH(request: Request) {
+    try {
+        const adminUser = await checkAdmin(request);
+        const body = await request.json();
+        const { userId } = body;
+
+        if (!userId) throw new Error("userId is required");
+        if (adminUser.id === userId)
+            throw new Error(
+                "Action denied: You cannot modify your own account.",
+            );
+
+        // Room assignment update — use update, not upsert, to avoid nulling other columns
+        if (
+            body.morning_room !== undefined ||
+            body.afternoon_room !== undefined
+        ) {
+            const { error } = await supabaseAdmin
+                .from("user_roles")
+                .update({
+                    morning_room: body.morning_room ?? null,
+                    afternoon_room: body.afternoon_room ?? null,
+                })
+                .eq("id", userId);
+            if (error) throw error;
+            return NextResponse.json({ success: true });
+        }
+
+        // Role update — use update, not upsert, to avoid nulling room assignments
+        if (body.newRole !== undefined) {
+            const { error } = await supabaseAdmin
+                .from("user_roles")
+                .update({ role: body.newRole })
+                .eq("id", userId);
+            if (error) throw error;
+            return NextResponse.json({ success: true });
+        }
+
+        throw new Error("Nothing to update — provide newRole or room fields.");
+    } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}
+
+// ── DELETE: remove user from auth + user_roles ───────────────────────────────
+
 export async function DELETE(request: Request) {
     try {
         const adminUser = await checkAdmin(request);
         const { userId } = await request.json();
 
-        if (adminUser.id === userId) {
+        if (!userId) throw new Error("userId is required");
+        if (adminUser.id === userId)
             throw new Error(
                 "Action denied: You cannot delete your own account.",
             );
-        }
 
         const { error: roleError } = await supabaseAdmin
             .from("user_roles")
             .delete()
             .eq("id", userId);
-
         if (roleError) throw roleError;
 
         const { error: authError } =
