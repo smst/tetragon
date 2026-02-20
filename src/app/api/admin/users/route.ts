@@ -73,16 +73,16 @@ export async function POST(request: Request) {
         if (!email) throw new Error("Email is required");
 
         if (resend) {
-            // generateLink creates a magic link and sends it via email.
-            // Works for both confirmed and unconfirmed users.
-            // The confirm page handles implicit-flow hash tokens, so no PKCE needed.
-            const { error } = await supabaseAdmin.auth.admin.generateLink({
-                type: "magiclink",
+            // resetPasswordForEmail actively dispatches a recovery email.
+            // It works for both confirmed and unconfirmed users, bringing them
+            // securely to your reset-password flow to finish account setup.
+            const { error } = await supabaseAdmin.auth.resetPasswordForEmail(
                 email,
-                options: {
+                {
                     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/reset-password`,
                 },
-            });
+            );
+
             if (error) throw error;
         } else {
             // Invite new user — creates auth record + sends email
