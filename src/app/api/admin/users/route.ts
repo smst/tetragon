@@ -72,15 +72,16 @@ export async function POST(request: Request) {
 
         if (!email) throw new Error("Email is required");
 
+        // Dynamically grab the origin URL from the request to guarantee a valid redirect path
+        const requestUrl = new URL(request.url);
+        const origin = requestUrl.origin;
+        const redirectUrl = `${origin}/auth/confirm?next=/reset-password`;
+
         if (resend) {
             // resetPasswordForEmail actively dispatches a recovery email.
-            // It works for both confirmed and unconfirmed users, bringing them
-            // securely to your reset-password flow to finish account setup.
             const { error } = await supabaseAdmin.auth.resetPasswordForEmail(
                 email,
-                {
-                    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/reset-password`,
-                },
+                { redirectTo: redirectUrl },
             );
 
             if (error) throw error;
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
             // Invite new user — creates auth record + sends email
             const { data, error } =
                 await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-                    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/reset-password`,
+                    redirectTo: redirectUrl,
                 });
             if (error) throw error;
 
