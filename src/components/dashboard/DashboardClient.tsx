@@ -46,47 +46,56 @@ export default function DashboardClient({
         );
 
     const renderAdminView = () => (
-        <div className="space-y-8">
-            <SchedulePanel />
+        <>
             <GradingPanel />
             <ScoreboardPanel />
             <AttendancePanel />
             <StaffManagement />
             <ConfigPanel />
-        </div>
+        </>
     );
 
     const renderGraderView = () => (
-        <div className="space-y-8">
-            <SchedulePanel />
+        <>
             <GradingPanel />
-        </div>
+        </>
     );
 
     const renderProctorView = () => (
-        <div className="space-y-8">
-            <SchedulePanel />
+        <>
             <AttendancePanel />
             <ProctorGuidePanel />
-        </div>
+        </>
     );
 
     return (
         <UserProvider userEmail={userEmail} userRole={userRole}>
-            <div className="bg-white pb-20">
+            <div className="bg-white pb-20 min-h-screen">
                 <DashboardHeader
                     userEmail={userEmail}
                     role={userRole}
                     onLogout={handleLogout}
                 />
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-                    {userRole === "admin" && renderAdminView()}
-                    {userRole === "grader" && renderGraderView()}
-                    {userRole === "proctor" && renderProctorView()}
-                    {userRole === "unassigned" && (
-                        <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200">
+
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 xl:px-8 mt-8">
+                    {userRole === "unassigned" ? (
+                        <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200 max-w-2xl mx-auto mt-12">
                             Your account is pending role assignment. Please
                             contact an administrator.
+                        </div>
+                    ) : (
+                        <div className="flex flex-col xl:flex-row gap-8 items-start">
+                            {/* Left Sidebar - Schedule (Fixed sizing to prevent squeezing) */}
+                            <div className="w-full xl:w-92 shrink-0 xl:sticky xl:top-24">
+                                <SchedulePanel />
+                            </div>
+
+                            {/* Right Main Content */}
+                            <div className="w-full flex-1 space-y-8 min-w-0">
+                                {userRole === "admin" && renderAdminView()}
+                                {userRole === "grader" && renderGraderView()}
+                                {userRole === "proctor" && renderProctorView()}
+                            </div>
                         </div>
                     )}
                 </main>
