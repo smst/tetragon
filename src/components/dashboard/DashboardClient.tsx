@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { useTournamentData } from "@/hooks/useTournamentData";
 import { UserRole } from "@/types";
+import { UserProvider } from "@/context/UserContext";
 
 // Sub-Panels
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -49,6 +50,7 @@ export default function DashboardClient({
             <SchedulePanel />
             <GradingPanel />
             <ScoreboardPanel />
+            <AttendancePanel />
             <StaffManagement />
             <ConfigPanel />
         </div>
@@ -70,23 +72,25 @@ export default function DashboardClient({
     );
 
     return (
-        <div className="bg-white pb-20">
-            <DashboardHeader
-                userEmail={userEmail}
-                role={userRole}
-                onLogout={handleLogout}
-            />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-                {userRole === "admin" && renderAdminView()}
-                {userRole === "grader" && renderGraderView()}
-                {userRole === "proctor" && renderProctorView()}
-                {userRole === "unassigned" && (
-                    <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200">
-                        Your account is pending role assignment. Please contact
-                        an administrator.
-                    </div>
-                )}
-            </main>
-        </div>
+        <UserProvider userEmail={userEmail} userRole={userRole}>
+            <div className="bg-white pb-20">
+                <DashboardHeader
+                    userEmail={userEmail}
+                    role={userRole}
+                    onLogout={handleLogout}
+                />
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+                    {userRole === "admin" && renderAdminView()}
+                    {userRole === "grader" && renderGraderView()}
+                    {userRole === "proctor" && renderProctorView()}
+                    {userRole === "unassigned" && (
+                        <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200">
+                            Your account is pending role assignment. Please
+                            contact an administrator.
+                        </div>
+                    )}
+                </main>
+            </div>
+        </UserProvider>
     );
 }

@@ -232,7 +232,7 @@ function TeamRoundConfigSection() {
                                     >
                                         {/* Row header */}
                                         <div className="flex items-start justify-between gap-4 mb-3">
-                                            <span className="text-sm font-semibold text-gray-700 pt-1 w-8 flex-shrink-0">
+                                            <span className="text-sm font-semibold text-gray-700 pt-1 w-8 shrink-0">
                                                 Q{row.question_number}
                                             </span>
 
@@ -278,7 +278,7 @@ function TeamRoundConfigSection() {
                                             )}
 
                                             {/* Actions */}
-                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                            <div className="flex items-center gap-2 shrink-0">
                                                 {msg ? (
                                                     <span
                                                         className={`text-xs font-medium ${
@@ -462,7 +462,7 @@ export default function ConfigPanel() {
 
             <div className="flex flex-col sm:flex-row gap-6">
                 {/* Sidebar */}
-                <nav className="sm:w-48 flex-shrink-0">
+                <nav className="sm:w-48 shrink-0">
                     <ul className="space-y-1">
                         {sections.map((s) => (
                             <li key={s.id}>
