@@ -16,7 +16,7 @@ interface StaffMember {
 }
 
 type ModalType = "delete" | "role" | "invite" | "rooms" | null;
-type ViewTab = "committee" | "proctors";
+type ViewTab = "committee" | "proctors" | "unassigned";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -401,12 +401,21 @@ export default function UserManagementPanel() {
     };
 
     const committeeUsers = users.filter(
-        (u) =>
-            u.role === "admin" ||
-            u.role === "grader" ||
-            u.role === "unassigned",
+        (u) => u.role === "admin" || u.role === "grader",
     );
     const proctorUsers = users.filter((u) => u.role === "proctor");
+    const unassignedUsers = users.filter((u) => u.role === "unassigned");
+
+    useEffect(() => {
+        // Auto-switch away if the unassigned tab becomes empty while viewing it
+        if (
+            activeTab === "unassigned" &&
+            unassignedUsers.length === 0 &&
+            users.length > 0
+        ) {
+            setActiveTab("committee");
+        }
+    }, [users, activeTab, unassignedUsers.length]);
 
     // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -606,6 +615,15 @@ export default function UserManagementPanel() {
         { id: "proctors", label: "Proctors", count: proctorUsers.length },
     ];
 
+    // Conditionally inject the Unassigned tab
+    if (unassignedUsers.length > 0) {
+        tabs.push({
+            id: "unassigned",
+            label: "Unassigned",
+            count: unassignedUsers.length,
+        });
+    }
+
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
             <div className="flex flex-col gap-4 mb-6">
@@ -652,6 +670,16 @@ export default function UserManagementPanel() {
                 <UserTable
                     list={proctorUsers}
                     showRooms={true}
+                    onRole={openRole}
+                    onRooms={openRooms}
+                    onResend={handleResend}
+                    onDelete={openDelete}
+                />
+            )}
+            {activeTab === "unassigned" && (
+                <UserTable
+                    list={unassignedUsers}
+                    showRooms={false}
                     onRole={openRole}
                     onRooms={openRooms}
                     onResend={handleResend}
