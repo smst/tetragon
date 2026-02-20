@@ -9,7 +9,7 @@ const TIMEZONE = "America/New_York";
 
 const TIME_WINDOWS = {
     Morning: { openHour: 9, openMin: 30, closeHour: 9, closeMin: 45 },
-    Afternoon: { openHour: 12, openMin: 15, closeHour: 13, closeMin: 0 },
+    Afternoon: { openHour: 12, openMin: 15, closeHour: 22, closeMin: 0 },
 } as const;
 
 type Period = keyof typeof TIME_WINDOWS;
@@ -75,9 +75,10 @@ function AttendanceSubPanel({
     >(() => getWindowStatus(period));
 
     useEffect(() => {
+        setWindowStatus(getWindowStatus(period));
         const id = setInterval(
             () => setWindowStatus(getWindowStatus(period)),
-            30_000,
+            5_000,
         );
         return () => clearInterval(id);
     }, [period]);
@@ -212,7 +213,7 @@ function AttendanceSubPanel({
         const win = TIME_WINDOWS[period];
 
         const roomChip = room ? (
-            <span className="font-semibold">Room {room}</span>
+            <span className="font-semibold">Room {room}:</span>
         ) : (
             <span className="italic">No room assigned</span>
         );
@@ -224,7 +225,7 @@ function AttendanceSubPanel({
             </>
         ) : isOpen ? (
             <>
-                {roomChip}: Please take attendance by{" "}
+                {roomChip} Please take attendance by{" "}
                 {fmt(win.closeHour, win.closeMin)} ET.
             </>
         ) : hasExisting ? (
@@ -325,7 +326,7 @@ function AttendanceSubPanel({
                                                     transition-colors cursor-pointer
                                                     ${
                                                         isPresent
-                                                            ? "hover:bg-green-100"
+                                                            ? "hover:bg-green-50 hover:text-green-700"
                                                             : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                                     }
                                                 `}
