@@ -5,8 +5,6 @@ import { useTournamentData } from "@/hooks/useTournamentData";
 import { useUser } from "@/context/UserContext";
 import { Competitor } from "@/types";
 
-// ── Time window config (must match server) ────────────────────────────────────
-
 const TIMEZONE = "America/New_York";
 
 const TIME_WINDOWS = {
@@ -49,8 +47,6 @@ function windowLabel(period: Period): string {
     return `${fmt(win.openHour, win.openMin)} – ${fmt(win.closeHour, win.closeMin)} ET`;
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface ProctorRooms {
     morning_room: number | null;
     afternoon_room: number | null;
@@ -78,7 +74,6 @@ function AttendanceSubPanel({
         "before" | "open" | "closed"
     >(() => getWindowStatus(period));
 
-    // Refresh window status every 30s
     useEffect(() => {
         const id = setInterval(
             () => setWindowStatus(getWindowStatus(period)),
@@ -87,7 +82,6 @@ function AttendanceSubPanel({
         return () => clearInterval(id);
     }, [period]);
 
-    // Filter + sort competitors to this room
     const roomCompetitors = useMemo(
         () =>
             room
@@ -107,11 +101,8 @@ function AttendanceSubPanel({
         [competitors, room],
     );
 
-    // Fetch existing submission — keyed only on recorded_by + period
-    // (single-day event, no date filtering needed)
     const fetchExisting = useCallback(async () => {
         setLoadingExisting(true);
-
         const {
             data: { session },
         } = await supabase.auth.getSession();
@@ -137,21 +128,18 @@ function AttendanceSubPanel({
             setPresentIds(
                 new Set<string>(data.map((r: any) => r.competitor_id)),
             );
-            setStatus("Previously submitted — you can resubmit to overwrite.");
+            setStatus("Attendance has been submitted.");
         } else {
             setHasExisting(false);
             setPresentIds(new Set());
             setStatus("");
         }
-
         setLoadingExisting(false);
     }, [period]);
 
     useEffect(() => {
         fetchExisting();
     }, [fetchExisting]);
-
-    // ── Handlers ──────────────────────────────────────────────────────────────
 
     const toggleAttendance = (id: string) => {
         setPresentIds((prev) => {
@@ -170,7 +158,6 @@ function AttendanceSubPanel({
     const submitAttendance = async () => {
         setIsSaving(true);
         setStatus("Saving...");
-
         const {
             data: { session },
         } = await supabase.auth.getSession();
@@ -194,7 +181,6 @@ function AttendanceSubPanel({
         });
 
         const json = await res.json();
-
         if (!res.ok) {
             setStatus("Error: " + json.error);
         } else {
@@ -210,7 +196,6 @@ function AttendanceSubPanel({
     const isDisabled = windowStatus === "before";
     const isDimmed = isLocked || isDisabled;
 
-    // Group by team
     const byTeam = useMemo(() => {
         const groups: Record<string, Competitor[]> = {};
         roomCompetitors.forEach((c) => {
@@ -222,15 +207,43 @@ function AttendanceSubPanel({
     }, [roomCompetitors]);
 
     const WindowBanner = () => {
-        if (windowStatus === "open") return null;
         const isBeforeWindow = windowStatus === "before";
+        const isOpen = windowStatus === "open";
         const win = TIME_WINDOWS[period];
+
+        const roomChip = room ? (
+            <span className="font-semibold">Room {room}</span>
+        ) : (
+            <span className="italic">No room assigned</span>
+        );
+
+        const message = isBeforeWindow ? (
+            <>
+                {roomChip} Attendance opens at {fmt(win.openHour, win.openMin)}{" "}
+                ET.
+            </>
+        ) : isOpen ? (
+            <>
+                {roomChip}: Please take attendance by{" "}
+                {fmt(win.closeHour, win.closeMin)} ET.
+            </>
+        ) : hasExisting ? (
+            <>{roomChip} Attendance window closed, attendance is locked.</>
+        ) : (
+            <>
+                {roomChip} Attendance window closed, you may still submit a late
+                entry.
+            </>
+        );
+
         return (
             <div
                 className={`flex items-center gap-2 px-5 py-3 rounded-xl mb-4 text-md font-medium ${
                     isBeforeWindow
                         ? "bg-gray-100 text-gray-500 border border-gray-200"
-                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                        : isOpen
+                          ? "bg-blue-50 text-blue-700 border border-blue-200"
+                          : "bg-amber-50 text-amber-700 border border-amber-200"
                 }`}
             >
                 <svg
@@ -246,11 +259,7 @@ function AttendanceSubPanel({
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                 </svg>
-                {isBeforeWindow
-                    ? `${period} attendance opens at ${fmt(win.openHour, win.openMin)} ET`
-                    : hasExisting
-                      ? `${period} window closed — attendance is locked`
-                      : `${period} window closed — you may still submit a late entry`}
+                {message}
             </div>
         );
     };
@@ -259,27 +268,6 @@ function AttendanceSubPanel({
         <div
             className={`flex flex-col transition-opacity duration-200 ${isDimmed ? "opacity-50 pointer-events-none" : ""}`}
         >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-gray-800">
-                        {period}
-                    </h3>
-                    <span className="text-xs font-medium text-gray-400">
-                        {windowLabel(period)}
-                    </span>
-                </div>
-                {room ? (
-                    <span className="text-sm font-medium text-gray-500 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-lg">
-                        Room {room}
-                    </span>
-                ) : (
-                    <span className="text-sm text-gray-400 italic">
-                        No room assigned
-                    </span>
-                )}
-            </div>
-
             <div className={isDimmed ? "pointer-events-none" : ""}>
                 <WindowBanner />
             </div>
@@ -337,7 +325,7 @@ function AttendanceSubPanel({
                                                     transition-colors cursor-pointer
                                                     ${
                                                         isPresent
-                                                            ? "bg-green-50 text-green-700 hover:bg-green-100"
+                                                            ? "hover:bg-green-100"
                                                             : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                                     }
                                                 `}
@@ -364,11 +352,7 @@ function AttendanceSubPanel({
 
                     <div className="flex items-center justify-between">
                         <span
-                            className={`text-sm font-medium ${
-                                status.startsWith("Error")
-                                    ? "text-red-600"
-                                    : "text-green-600"
-                            }`}
+                            className={`text-sm font-medium ${status.startsWith("Error") ? "text-red-600" : "text-gray-600"}`}
                         >
                             {status}
                         </span>
@@ -440,7 +424,6 @@ function AdminAttendanceView({ competitors }: { competitors: Competitor[] }) {
 
     const fetchAdminStatus = useCallback(async () => {
         setLoading(true);
-
         const { data: logs, error } = await supabase
             .from("attendance_logs")
             .select("competitor_id, check_in_period");
@@ -478,7 +461,6 @@ function AdminAttendanceView({ competitors }: { competitors: Competitor[] }) {
                         )
                         .map((l: any) => l.competitor_id),
                 );
-
                 grid[room][period] = {
                     submitted: presentInRoom.size > 0,
                     totalInRoom: roomCompetitors.length,
@@ -495,15 +477,13 @@ function AdminAttendanceView({ competitors }: { competitors: Competitor[] }) {
         fetchAdminStatus();
     }, [fetchAdminStatus]);
 
-    if (loading) {
+    if (loading)
         return (
             <div className="text-sm text-gray-400 animate-pulse py-4">
                 Loading attendance summary...
             </div>
         );
-    }
 
-    // Build alerts
     const alerts: string[] = [];
     for (const room of rooms) {
         for (const period of ["Morning", "Afternoon"] as Period[]) {
@@ -664,6 +644,7 @@ function AdminAttendanceView({ competitors }: { competitors: Competitor[] }) {
 
 function ProctorAttendanceView({ competitors }: { competitors: Competitor[] }) {
     const [proctorRooms, setProctorRooms] = useState<ProctorRooms | null>(null);
+    const [activeTab, setActiveTab] = useState<Period>("Morning");
 
     useEffect(() => {
         const fetchRooms = async () => {
@@ -671,36 +652,56 @@ function ProctorAttendanceView({ competitors }: { competitors: Competitor[] }) {
                 data: { session },
             } = await supabase.auth.getSession();
             if (!session) return;
-
             const { data } = await supabase
                 .from("user_roles")
                 .select("morning_room, afternoon_room")
                 .eq("id", session.user.id)
                 .single();
-
             if (data) setProctorRooms(data as ProctorRooms);
         };
         fetchRooms();
     }, []);
 
+    const tabs: { id: Period; label: string }[] = [
+        { id: "Morning", label: "Morning" },
+        { id: "Afternoon", label: "Afternoon" },
+    ];
+
     return (
-        <div className="space-y-10">
-            {(["Morning", "Afternoon"] as Period[]).map((period, i) => (
-                <React.Fragment key={period}>
-                    {i > 0 && <hr className="border-gray-200" />}
-                    <AttendanceSubPanel
-                        period={period}
-                        room={
-                            proctorRooms?.[
-                                period === "Morning"
-                                    ? "morning_room"
-                                    : "afternoon_room"
-                            ] ?? null
-                        }
-                        competitors={competitors}
-                    />
-                </React.Fragment>
-            ))}
+        <div className="flex flex-col gap-4">
+            <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-full sm:w-max">
+                {tabs.map((tab) => {
+                    const status = getWindowStatus(tab.id);
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                                activeTab === tab.id
+                                    ? "bg-white shadow text-blue-700"
+                                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                            }`}
+                        >
+                            {tab.label}
+                            {status === "open" && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
+            <AttendanceSubPanel
+                period={activeTab}
+                room={
+                    proctorRooms?.[
+                        activeTab === "Morning"
+                            ? "morning_room"
+                            : "afternoon_room"
+                    ] ?? null
+                }
+                competitors={competitors}
+            />
         </div>
     );
 }
@@ -716,7 +717,6 @@ export default function AttendancePanel() {
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Attendance</h2>
             </div>
-
             {userRole === "admin" ? (
                 <AdminAttendanceView competitors={competitors} />
             ) : (
