@@ -181,8 +181,8 @@ export default function ScoreboardPanel() {
             </div>
 
             <div className="flex flex-col space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                    <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
                         {[
                             { id: "individual", label: "Individuals" },
                             { id: "team", label: "Teams" },

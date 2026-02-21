@@ -630,7 +630,7 @@ export default function UserManagementPanel() {
                 <h2 className="text-xl font-bold text-gray-900">
                     User Management
                 </h2>
-                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-full sm:w-max">
+                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}

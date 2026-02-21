@@ -14,7 +14,7 @@ export default function GradingPanel() {
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
             <div className="flex flex-col gap-4 mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Grading</h2>
-                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-full sm:w-max overflow-x-auto">
+                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
                     {[
                         { id: "math", label: "Math" },
                         { id: "science", label: "Science" },
