@@ -142,9 +142,7 @@ export default function ScoreboardPanel() {
     }) => (
         <th
             onClick={() => requestSort(sortKey)}
-            className={
-                "group px-6 py-3 text-left text-xs font-medium uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none text-gray-500"
-            }
+            className="group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none"
         >
             <div className="flex items-center gap-1">
                 {label}
@@ -222,11 +220,11 @@ export default function ScoreboardPanel() {
                     )}
                 </div>
 
-                <div className="shadow-md rounded-xl mb-5">
+                <div className="shadow-md rounded-xl">
                     <div className="border border-gray-300 rounded-xl overflow-x-auto">
                         <table className="min-w-full border-collapse">
-                            <thead className="bg-gray-50 border-b border-gray-300">
-                                <tr>
+                            <thead className="bg-gray-100">
+                                <tr className="border-b border-gray-300">
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">
                                         Rank
                                     </th>
@@ -292,7 +290,7 @@ export default function ScoreboardPanel() {
                                 {sortedData.map((row, index) => (
                                     <tr
                                         key={row.id}
-                                        className="border-b border-gray-200 hover:bg-blue-50 transition-colors last:border-0"
+                                        className="border-b border-gray-200 hover:bg-gray-50 transition-colors last:border-0"
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             #{index + 1}
@@ -356,7 +354,7 @@ export default function ScoreboardPanel() {
                                     <tr>
                                         <td
                                             colSpan={6}
-                                            className="px-6 py-8 text-center text-sm text-gray-500"
+                                            className="px-6 py-8 text-center text-sm text-gray-500 italic"
                                         >
                                             No data available.
                                         </td>

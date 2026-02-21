@@ -144,7 +144,7 @@ function AttendanceSubPanel({
             setStatus("");
         }
         setLoadingExisting(false);
-    }, [period, roomCompetitors]); // Added roomCompetitors to dependency array
+    }, [period, roomCompetitors]);
 
     useEffect(() => {
         fetchExisting();
@@ -509,10 +509,15 @@ function AdminAttendanceView({ competitors }: { competitors: Competitor[] }) {
 
     const Cell = ({ room, period }: { room: string; period: Period }) => {
         const s = statusGrid[room]?.[period];
-        if (!s) return <td className="px-4 py-3 text-gray-300 text-sm">—</td>;
+        if (!s)
+            return (
+                <td className="px-6 py-4 whitespace-nowrap text-gray-300 text-sm">
+                    —
+                </td>
+            );
         const missing = s.totalInRoom - s.presentCount;
         return (
-            <td className="px-4 py-3">
+            <td className="px-6 py-4 whitespace-nowrap">
                 {!s.submitted ? (
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-full">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
@@ -581,42 +586,44 @@ function AdminAttendanceView({ competitors }: { competitors: Competitor[] }) {
                 </div>
             )}
 
-            <div className="rounded-xl border border-gray-200 overflow-hidden">
-                <table className="min-w-full border-collapse text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Room
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Morning
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Afternoon
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Competitors
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                        {rooms.map((room) => (
-                            <tr
-                                key={room}
-                                className="hover:bg-gray-50 transition-colors"
-                            >
-                                <td className="px-4 py-3 font-medium text-gray-700">
-                                    Room {room}
-                                </td>
-                                <Cell room={room} period="Morning" />
-                                <Cell room={room} period="Afternoon" />
-                                <td className="px-4 py-3 text-sm text-gray-500">
-                                    {competitorsByRoom[room]?.length ?? 0}
-                                </td>
+            <div className="shadow-md rounded-xl">
+                <div className="border border-gray-300 rounded-xl overflow-x-auto">
+                    <table className="min-w-full border-collapse">
+                        <thead className="bg-gray-100">
+                            <tr className="border-b border-gray-300">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Room
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Morning
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Afternoon
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Competitors
+                                </th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-white">
+                            {rooms.map((room) => (
+                                <tr
+                                    key={room}
+                                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors last:border-0"
+                                >
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        Room {room}
+                                    </td>
+                                    <Cell room={room} period="Morning" />
+                                    <Cell room={room} period="Afternoon" />
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {competitorsByRoom[room]?.length ?? 0}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div className="flex justify-end">
