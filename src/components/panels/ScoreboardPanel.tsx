@@ -163,21 +163,8 @@ export default function ScoreboardPanel() {
 
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Scoreboard</h2>
-                <button
-                    onClick={handleCalculate}
-                    disabled={loadingScore}
-                    className={`px-8 py-2.5 shadow-md shadow-blue-300 text-md font-medium text-white rounded-xl transition-all active:scale-95 ${
-                        loadingScore
-                            ? "bg-blue-400 cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                    }`}
-                >
-                    {loadingScore
-                        ? "Running Algorithm..."
-                        : "Recalculate Scores"}
-                </button>
             </div>
 
             <div className="flex flex-col space-y-4">
@@ -364,6 +351,22 @@ export default function ScoreboardPanel() {
                         </table>
                     </div>
                 </div>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+                <button
+                    onClick={handleCalculate}
+                    disabled={loadingScore}
+                    className={`px-6 py-2.5 shadow-md shadow-blue-300 text-white font-medium rounded-xl transition-all active:scale-95 text-sm ${
+                        loadingScore
+                            ? "bg-blue-400 cursor-not-allowed"
+                            : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                    }`}
+                >
+                    {loadingScore
+                        ? "Running Algorithm..."
+                        : "Recalculate Scores"}
+                </button>
             </div>
         </section>
     );
