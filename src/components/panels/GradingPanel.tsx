@@ -8,7 +8,9 @@ import { useTournamentData } from "@/hooks/useTournamentData";
 export default function GradingPanel() {
     const { competitors, teams } = useTournamentData();
 
-    const [activeTab, setActiveTab] = useState("math");
+    const [activeTab, setActiveTab] = useState<
+        "math" | "science" | "team" | "design"
+    >("math");
 
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
@@ -23,7 +25,7 @@ export default function GradingPanel() {
                     ].map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
+                            onClick={() => setActiveTab(tab.id as any)}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                                 activeTab === tab.id
                                     ? "bg-white shadow text-blue-700"

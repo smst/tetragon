@@ -163,11 +163,8 @@ export default function ScoreboardPanel() {
 
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-            <div className="mb-6">
+            <div className="flex flex-col gap-4 mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Scoreboard</h2>
-            </div>
-
-            <div className="flex flex-col space-y-4">
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                     <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
                         {[

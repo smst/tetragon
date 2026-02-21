@@ -634,7 +634,7 @@ export default function UserManagementPanel() {
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
+                            onClick={() => setActiveTab(tab.id as any)}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                                 activeTab === tab.id
                                     ? "bg-white shadow text-blue-700"
