@@ -76,7 +76,7 @@ export default function RegistrationImportPanel() {
 
     const teamCounts = stagedData.reduce(
         (acc, row) => {
-            const t = row.teamName.trim();
+            const t = row.teamName.trim().toLowerCase();
             if (t) acc[t] = (acc[t] || 0) + 1;
             return acc;
         },
@@ -84,10 +84,12 @@ export default function RegistrationImportPanel() {
     );
 
     const uniqueTeamMap = new Map<string, string>();
-    existingDbTeams.forEach((name) => uniqueTeamMap.set(name, name));
+    existingDbTeams.forEach((name) =>
+        uniqueTeamMap.set(name.toLowerCase(), name),
+    );
     stagedData.forEach((row) => {
         const name = row.teamName.trim();
-        if (name) uniqueTeamMap.set(name, name);
+        if (name) uniqueTeamMap.set(name.toLowerCase(), name);
     });
     const allTeamNames = Array.from(uniqueTeamMap.values()).sort((a, b) =>
         a.localeCompare(b),
@@ -96,11 +98,11 @@ export default function RegistrationImportPanel() {
     const groupedByTeam = stagedData.reduce(
         (acc, row) => {
             const originalName = row.teamName.trim();
-            const key = originalName || "UNASSIGNED / NO TEAM";
+            const key = originalName.toLowerCase() || "Unassigned";
 
             if (!acc[key]) {
                 acc[key] = {
-                    displayName: originalName || "UNASSIGNED / NO TEAM",
+                    displayName: originalName || "Unassigned",
                     members: [],
                 };
             }
@@ -131,7 +133,7 @@ export default function RegistrationImportPanel() {
                 .single();
 
             if (existingTeam) {
-                teamIdMap[teamName] = existingTeam.id;
+                teamIdMap[teamName.toLowerCase()] = existingTeam.id;
             } else {
                 const { data: newTeam } = await supabase
                     .from("teams")
@@ -140,7 +142,7 @@ export default function RegistrationImportPanel() {
                     .single();
 
                 if (newTeam) {
-                    teamIdMap[teamName] = newTeam.id;
+                    teamIdMap[teamName.toLowerCase()] = newTeam.id;
                 }
             }
         }
@@ -149,7 +151,7 @@ export default function RegistrationImportPanel() {
             name: row.participantName.trim(),
             grade: row.grade.trim(),
             team_id: row.teamName.trim()
-                ? teamIdMap[row.teamName.trim()]
+                ? teamIdMap[row.teamName.trim().toLowerCase()]
                 : null,
         }));
 
@@ -194,7 +196,7 @@ export default function RegistrationImportPanel() {
                     type="file"
                     accept=".tsv"
                     onChange={handleFileUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors cursor-pointer"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:border-blue-300 file:transition-colors cursor-pointer file:cursor-pointer"
                 />
             </div>
 
@@ -230,17 +232,24 @@ export default function RegistrationImportPanel() {
                                 </thead>
                                 <tbody className="bg-white">
                                     {stagedData.map((row, i) => {
-                                        const tName = row.teamName.trim();
+                                        const tNameOriginal =
+                                            row.teamName.trim();
+                                        const tNameLower =
+                                            tNameOriginal.toLowerCase();
                                         const isUnique =
-                                            tName && teamCounts[tName] === 1;
+                                            tNameLower &&
+                                            teamCounts[tNameLower] === 1;
                                         const isDropdownOpen =
                                             focusedDropdownIdx === i;
 
                                         const filteredTeams =
                                             allTeamNames.filter(
                                                 (name) =>
-                                                    name.includes(tName) &&
-                                                    name !== tName,
+                                                    name
+                                                        .toLowerCase()
+                                                        .includes(tNameLower) &&
+                                                    name.toLowerCase() !==
+                                                        tNameLower,
                                             );
 
                                         return (
