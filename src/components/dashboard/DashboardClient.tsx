@@ -5,7 +5,6 @@ import { useTournamentData } from "@/hooks/useTournamentData";
 import { UserRole } from "@/types";
 import { UserProvider } from "@/context/UserContext";
 
-// Sub-Panels
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import SchedulePanel from "@/components/panels/SchedulePanel";
 import GradingPanel from "@/components/panels/GradingPanel";
@@ -14,6 +13,7 @@ import StaffManagement from "@/components/panels/StaffManagementPanel";
 import AttendancePanel from "@/components/panels/AttendancePanel";
 import ProctorGuidePanel from "@/components/panels/ProctorGuidePanel";
 import ConfigPanel from "@/components/panels/ConfigPanel";
+import RegistrationImportPanel from "@/components/panels/RegistrationImportPanel";
 
 interface DashboardClientProps {
     userEmail: string;
@@ -51,6 +51,7 @@ export default function DashboardClient({
             <ScoreboardPanel />
             <AttendancePanel />
             <StaffManagement />
+            <RegistrationImportPanel />
             <ConfigPanel />
         </>
     );
@@ -85,12 +86,10 @@ export default function DashboardClient({
                         </div>
                     ) : (
                         <div className="flex flex-col xl:flex-row gap-8 items-start">
-                            {/* Left Sidebar - Schedule (Fixed sizing to prevent squeezing) */}
                             <div className="w-full xl:w-92 shrink-0 xl:sticky xl:top-24">
                                 <SchedulePanel />
                             </div>
 
-                            {/* Right Main Content */}
                             <div className="w-full flex-1 space-y-8 min-w-0">
                                 {userRole === "admin" && renderAdminView()}
                                 {userRole === "grader" && renderGraderView()}

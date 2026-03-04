@@ -31,9 +31,9 @@ export default function ScoreboardPanel() {
     // Connect directly to SWR cache
     const { competitors, teams, refreshData } = useTournamentData();
 
-    const [activeTab, setActiveTab] = useState<
-        "individual" | "team" | "design"
-    >("individual");
+    const [activeTab, setActiveTab] = useState<"individual" | "team">(
+        "individual",
+    );
     const [gradeFilter, setGradeFilter] = useState("all");
     const [sortConfig, setSortConfig] = useState<{
         key: SortKey;
@@ -49,8 +49,6 @@ export default function ScoreboardPanel() {
             setSortConfig({ key: "total", direction: "desc" });
         } else if (activeTab === "team") {
             setSortConfig({ key: "overall_score", direction: "desc" });
-        } else if (activeTab === "design") {
-            setSortConfig({ key: "design_round_score", direction: "desc" });
         }
     }, [activeTab]);
 
@@ -170,7 +168,6 @@ export default function ScoreboardPanel() {
                         {[
                             { id: "individual", label: "Individuals" },
                             { id: "team", label: "Teams" },
-                            { id: "design", label: "Design" },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -256,18 +253,6 @@ export default function ScoreboardPanel() {
                                             />
                                         </>
                                     )}
-                                    {activeTab === "design" && (
-                                        <>
-                                            <SortableHeader
-                                                label="Team Name"
-                                                sortKey="name"
-                                            />
-                                            <SortableHeader
-                                                label="Design Score"
-                                                sortKey="design_round_score"
-                                            />
-                                        </>
-                                    )}
                                 </tr>
                             </thead>
                             <tbody className="bg-white">
@@ -315,18 +300,6 @@ export default function ScoreboardPanel() {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
                                                     {row.overall_score?.toFixed(
-                                                        3,
-                                                    )}
-                                                </td>
-                                            </>
-                                        )}
-                                        {activeTab === "design" && (
-                                            <>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {row.name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
-                                                    {row.design_round_score?.toFixed(
                                                         3,
                                                     )}
                                                 </td>
