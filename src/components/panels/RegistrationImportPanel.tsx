@@ -215,7 +215,7 @@ export default function RegistrationImportPanel() {
             {stagedData.length > 0 && (
                 <div className="space-y-4">
                     <div className="shadow-md rounded-xl">
-                        <div className="border border-gray-300 rounded-xl overflow-x-auto max-h-[600px]">
+                        <div className="border border-gray-300 rounded-xl overflow-x-auto max-h-150">
                             <table className="min-w-full border-collapse">
                                 <thead className="bg-gray-100 sticky top-0 z-10">
                                     <tr className="border-b border-gray-300">
