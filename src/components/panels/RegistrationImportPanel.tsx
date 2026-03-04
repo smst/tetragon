@@ -19,6 +19,9 @@ export default function RegistrationImportPanel() {
     }>({ type: "", text: "" });
     const [existingDbTeams, setExistingDbTeams] = useState<string[]>([]);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [focusedDropdownIdx, setFocusedDropdownIdx] = useState<number | null>(
+        null,
+    );
 
     useEffect(() => {
         const fetchTeams = async () => {
@@ -73,28 +76,41 @@ export default function RegistrationImportPanel() {
 
     const teamCounts = stagedData.reduce(
         (acc, row) => {
-            const t = row.teamName.trim().toLowerCase();
+            const t = row.teamName.trim();
             if (t) acc[t] = (acc[t] || 0) + 1;
             return acc;
         },
         {} as Record<string, number>,
     );
 
-    const allTeamNames = Array.from(
-        new Set([
-            ...existingDbTeams,
-            ...stagedData.map((d) => d.teamName.trim()).filter(Boolean),
-        ]),
-    ).sort();
+    const uniqueTeamMap = new Map<string, string>();
+    existingDbTeams.forEach((name) => uniqueTeamMap.set(name, name));
+    stagedData.forEach((row) => {
+        const name = row.teamName.trim();
+        if (name) uniqueTeamMap.set(name, name);
+    });
+    const allTeamNames = Array.from(uniqueTeamMap.values()).sort((a, b) =>
+        a.localeCompare(b),
+    );
 
     const groupedByTeam = stagedData.reduce(
         (acc, row) => {
-            const t = row.teamName.trim() || "UNASSIGNED / NO TEAM";
-            if (!acc[t]) acc[t] = [];
-            acc[t].push(row);
+            const originalName = row.teamName.trim();
+            const key = originalName || "UNASSIGNED / NO TEAM";
+
+            if (!acc[key]) {
+                acc[key] = {
+                    displayName: originalName || "UNASSIGNED / NO TEAM",
+                    members: [],
+                };
+            }
+            acc[key].members.push(row);
             return acc;
         },
-        {} as Record<string, ParsedRegistration[]>,
+        {} as Record<
+            string,
+            { displayName: string; members: ParsedRegistration[] }
+        >,
     );
 
     const handleImport = async () => {
@@ -115,7 +131,7 @@ export default function RegistrationImportPanel() {
                 .single();
 
             if (existingTeam) {
-                teamIdMap[teamName.toLowerCase()] = existingTeam.id;
+                teamIdMap[teamName] = existingTeam.id;
             } else {
                 const { data: newTeam } = await supabase
                     .from("teams")
@@ -124,7 +140,7 @@ export default function RegistrationImportPanel() {
                     .single();
 
                 if (newTeam) {
-                    teamIdMap[teamName.toLowerCase()] = newTeam.id;
+                    teamIdMap[teamName] = newTeam.id;
                 }
             }
         }
@@ -133,7 +149,7 @@ export default function RegistrationImportPanel() {
             name: row.participantName.trim(),
             grade: row.grade.trim(),
             team_id: row.teamName.trim()
-                ? teamIdMap[row.teamName.trim().toLowerCase()]
+                ? teamIdMap[row.teamName.trim()]
                 : null,
         }));
 
@@ -196,12 +212,6 @@ export default function RegistrationImportPanel() {
 
             {stagedData.length > 0 && (
                 <div className="space-y-4">
-                    <datalist id="team-names">
-                        {allTeamNames.map((name, idx) => (
-                            <option key={idx} value={name} />
-                        ))}
-                    </datalist>
-
                     <div className="shadow-md rounded-xl">
                         <div className="border border-gray-300 rounded-xl overflow-x-auto max-h-[600px]">
                             <table className="min-w-full border-collapse">
@@ -220,11 +230,18 @@ export default function RegistrationImportPanel() {
                                 </thead>
                                 <tbody className="bg-white">
                                     {stagedData.map((row, i) => {
-                                        const tName = row.teamName
-                                            .trim()
-                                            .toLowerCase();
+                                        const tName = row.teamName.trim();
                                         const isUnique =
                                             tName && teamCounts[tName] === 1;
+                                        const isDropdownOpen =
+                                            focusedDropdownIdx === i;
+
+                                        const filteredTeams =
+                                            allTeamNames.filter(
+                                                (name) =>
+                                                    name.includes(tName) &&
+                                                    name !== tName,
+                                            );
 
                                         return (
                                             <tr
@@ -244,7 +261,7 @@ export default function RegistrationImportPanel() {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow bg-transparent"
+                                                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow bg-white"
                                                     />
                                                 </td>
                                                 <td className="w-32 px-6 py-3 whitespace-nowrap">
@@ -258,14 +275,13 @@ export default function RegistrationImportPanel() {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow bg-transparent"
+                                                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow bg-white"
                                                     />
                                                 </td>
                                                 <td className="px-6 py-3 whitespace-nowrap">
                                                     <div className="relative">
                                                         <input
                                                             type="text"
-                                                            list="team-names"
                                                             value={row.teamName}
                                                             onChange={(e) =>
                                                                 handleCellChange(
@@ -275,18 +291,70 @@ export default function RegistrationImportPanel() {
                                                                         .value,
                                                                 )
                                                             }
+                                                            onFocus={() =>
+                                                                setFocusedDropdownIdx(
+                                                                    i,
+                                                                )
+                                                            }
+                                                            onBlur={() =>
+                                                                setTimeout(
+                                                                    () =>
+                                                                        setFocusedDropdownIdx(
+                                                                            null,
+                                                                        ),
+                                                                    200,
+                                                                )
+                                                            }
                                                             className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-shadow ${
                                                                 isUnique
-                                                                    ? "border-amber-400 bg-amber-50 text-amber-900 focus:ring-amber-500"
-                                                                    : "border-gray-200 bg-transparent focus:ring-blue-500"
+                                                                    ? "border-amber-400 bg-amber-50 text-amber-900 focus:ring-amber-500 pr-8"
+                                                                    : "border-gray-200 bg-white focus:ring-blue-500"
                                                             }`}
                                                         />
                                                         {isUnique && (
-                                                            <span className="absolute right-2 top-2 flex h-3 w-3">
+                                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-3 w-3 pointer-events-none">
                                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                                                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
                                                             </span>
                                                         )}
+                                                        {isDropdownOpen &&
+                                                            filteredTeams.length >
+                                                                0 && (
+                                                                <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                                                    {filteredTeams.map(
+                                                                        (
+                                                                            match,
+                                                                            idx,
+                                                                        ) => (
+                                                                            <li
+                                                                                key={
+                                                                                    idx
+                                                                                }
+                                                                                onMouseDown={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    e.preventDefault()
+                                                                                }
+                                                                                onClick={() => {
+                                                                                    handleCellChange(
+                                                                                        i,
+                                                                                        "teamName",
+                                                                                        match,
+                                                                                    );
+                                                                                    setFocusedDropdownIdx(
+                                                                                        null,
+                                                                                    );
+                                                                                }}
+                                                                                className="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer transition-colors"
+                                                                            >
+                                                                                {
+                                                                                    match
+                                                                                }
+                                                                            </li>
+                                                                        ),
+                                                                    )}
+                                                                </ul>
+                                                            )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -347,16 +415,18 @@ export default function RegistrationImportPanel() {
                         </div>
 
                         <div className="p-6 overflow-y-auto flex-1 bg-gray-50 space-y-4">
-                            {Object.entries(groupedByTeam)
-                                .sort(([a], [b]) => a.localeCompare(b))
-                                .map(([teamName, members]) => (
+                            {Object.values(groupedByTeam)
+                                .sort((a, b) =>
+                                    a.displayName.localeCompare(b.displayName),
+                                )
+                                .map(({ displayName, members }) => (
                                     <div
-                                        key={teamName}
+                                        key={displayName}
                                         className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
                                     >
                                         <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
                                             <span className="font-semibold text-gray-800">
-                                                {teamName}
+                                                {displayName}
                                             </span>
                                             <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
                                                 {members.length}{" "}
