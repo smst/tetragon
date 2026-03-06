@@ -34,7 +34,7 @@ const EVENT_SCHEDULE: ScheduleEvent[] = [
     },
     {
         id: "setup",
-        time: "9:40 AM - 9:45 AM",
+        time: "9:35 AM - 9:45 AM",
         title: "Instructions and Setup",
         baseLocation: "Assigned Room",
         period: "Morning",
@@ -59,7 +59,7 @@ const EVENT_SCHEDULE: ScheduleEvent[] = [
     {
         id: "grading",
         time: "10:35 AM - 2:00 PM",
-        title: "Grading Operations",
+        title: "Grading",
         baseLocation: "Grading Room",
         period: "None",
         roles: ["admin", "grader"],
@@ -74,15 +74,15 @@ const EVENT_SCHEDULE: ScheduleEvent[] = [
     },
     {
         id: "lunch_labs_split", // Special ID to trigger dynamic rendering
-        time: "11:30 AM - 12:15 PM",
+        time: "11:45 AM - 12:40 PM",
         title: "Lunch / Labs",
-        baseLocation: "Cafeteria / Hallways",
+        baseLocation: "Cafeteria / Main Hall",
         period: "None",
         roles: ["admin", "proctor", "grader", "unassigned"],
     },
     {
         id: "design",
-        time: "12:15 PM - 1:15 PM",
+        time: "12:45 PM - 1:45 PM",
         title: "Design Challenge",
         baseLocation: "Assigned Room",
         period: "Afternoon",
@@ -90,7 +90,7 @@ const EVENT_SCHEDULE: ScheduleEvent[] = [
     },
     {
         id: "team",
-        time: "1:20 PM - 2:05 PM",
+        time: "1:50 PM - 2:35 PM",
         title: "Team Round",
         baseLocation: "Assigned Room",
         period: "Afternoon",
@@ -98,7 +98,7 @@ const EVENT_SCHEDULE: ScheduleEvent[] = [
     },
     {
         id: "lightning",
-        time: "2:15 PM - 3:00 PM",
+        time: "2:40 PM - 3:30 PM",
         title: "Lightning Round",
         baseLocation: "Auditorium",
         period: "None",
@@ -106,7 +106,7 @@ const EVENT_SCHEDULE: ScheduleEvent[] = [
     },
     {
         id: "awards",
-        time: "3:00 PM - 3:45 PM",
+        time: "3:30 PM - 4:00 PM",
         title: "Awards",
         baseLocation: "Auditorium",
         period: "None",
