@@ -252,22 +252,22 @@ export default function SchedulePanel() {
                             const lunchFirst = isLunchFirstGroup(morningRoom);
 
                             // Placeholder times, await clarification
-                            const block1Time = "11:30 AM - 11:50 AM";
-                            const block2Time = "11:55 AM - 12:15 PM";
+                            const block1Time = "11:45 AM - 12:10 AM";
+                            const block2Time = "12:15 AM - 12:40 PM";
 
                             return (
                                 <React.Fragment key={task.id}>
                                     {renderEventCard(
                                         `${task.id}-block1`,
                                         block1Time,
-                                        lunchFirst ? "Lunch" : "Labs",
+                                        lunchFirst ? "Lunch" : "Lab Demos",
                                         lunchFirst ? "Cafeteria" : "Hallways",
                                         false,
                                     )}
                                     {renderEventCard(
                                         `${task.id}-block2`,
                                         block2Time,
-                                        lunchFirst ? "Labs Rotation" : "Lunch",
+                                        lunchFirst ? "Lab Demos" : "Lunch",
                                         lunchFirst ? "Hallways" : "Cafeteria",
                                         false,
                                     )}
