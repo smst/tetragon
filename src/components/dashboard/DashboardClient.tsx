@@ -13,7 +13,6 @@ import StaffManagement from "@/components/panels/StaffManagementPanel";
 import AttendancePanel from "@/components/panels/AttendancePanel";
 import ProctorGuidePanel from "@/components/panels/ProctorGuidePanel";
 import ConfigPanel from "@/components/panels/ConfigPanel";
-import RegistrationImportPanel from "@/components/panels/RegistrationImportPanel";
 
 interface DashboardClientProps {
     userEmail: string;
@@ -51,7 +50,6 @@ export default function DashboardClient({
             <ScoreboardPanel />
             <AttendancePanel />
             <StaffManagement />
-            <RegistrationImportPanel />
             <ConfigPanel />
         </>
     );

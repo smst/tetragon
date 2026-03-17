@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import RegistrationImportPanel from "./RegistrationImportPanel";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,9 +28,11 @@ interface EditableRow {
     subject: "math" | "science";
     question_number: number;
     sub_parts: EditableSubPart[];
-    points: number; // whole-question points when sub_parts is empty
+    points: number;
     dirty: boolean;
 }
+
+type ConfigTab = "team_round" | "import_competitors" | "import_volunteers";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -70,8 +73,11 @@ function PreviewBadge({ label, points }: { label: string; points: number }) {
 function TeamRoundConfigSection() {
     const [rows, setRows] = useState<EditableRow[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [saving, setSaving] = useState<Record<string, boolean>>({});
-    const [messages, setMessages] = useState<Record<string, string>>({});
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [globalMessage, setGlobalMessage] = useState<{
+        type: "success" | "error" | "";
+        text: string;
+    }>({ type: "", text: "" });
 
     const fetchConfig = useCallback(async () => {
         setLoading(true);
@@ -95,10 +101,9 @@ function TeamRoundConfigSection() {
         setRows((prev) =>
             prev.map((r) => (r.id === id ? { ...r, dirty: true } : r)),
         );
-        setMessages((prev) => ({ ...prev, [id]: "" }));
+        setGlobalMessage({ type: "", text: "" });
     };
 
-    // Whole-question points (no sub-parts)
     const updatePoints = (id: string, value: number) => {
         setRows((prev) =>
             prev.map((r) => (r.id === id ? { ...r, points: value } : r)),
@@ -106,7 +111,6 @@ function TeamRoundConfigSection() {
         markDirty(id);
     };
 
-    // Sub-part field changes
     const updateSubPart = (
         rowId: string,
         partIndex: number,
@@ -129,7 +133,6 @@ function TeamRoundConfigSection() {
         setRows((prev) =>
             prev.map((r) => {
                 if (r.id !== rowId) return r;
-                // Auto-label: next letter after the last one
                 const nextLabel =
                     r.sub_parts.length === 0
                         ? "a"
@@ -163,30 +166,45 @@ function TeamRoundConfigSection() {
         markDirty(rowId);
     };
 
-    const saveRow = async (row: EditableRow) => {
-        setSaving((prev) => ({ ...prev, [row.id]: true }));
+    const hasChanges = rows.some((r) => r.dirty);
 
-        const { error } = await supabase
-            .from("team_round_config")
-            .update({
-                sub_parts: row.sub_parts,
-                points: row.points,
-            })
-            .eq("id", row.id);
+    const saveAllChanges = async () => {
+        setIsSaving(true);
+        setGlobalMessage({ type: "", text: "" });
 
-        if (error) {
-            setMessages((prev) => ({ ...prev, [row.id]: "Error saving." }));
-        } else {
-            setRows((prev) =>
-                prev.map((r) => (r.id === row.id ? { ...r, dirty: false } : r)),
-            );
-            setMessages((prev) => ({ ...prev, [row.id]: "Saved!" }));
-            setTimeout(
-                () => setMessages((prev) => ({ ...prev, [row.id]: "" })),
-                2000,
-            );
+        const dirtyRows = rows.filter((r) => r.dirty);
+
+        // Process sequentially to ensure accurate error handling
+        let hasError = false;
+        for (const row of dirtyRows) {
+            const { error } = await supabase
+                .from("team_round_config")
+                .update({
+                    sub_parts: row.sub_parts,
+                    points: row.points,
+                })
+                .eq("id", row.id);
+
+            if (error) {
+                hasError = true;
+                break;
+            }
         }
-        setSaving((prev) => ({ ...prev, [row.id]: false }));
+
+        if (hasError) {
+            setGlobalMessage({
+                type: "error",
+                text: "Error saving changes. Please try again.",
+            });
+        } else {
+            setRows((prev) => prev.map((r) => ({ ...r, dirty: false })));
+            setGlobalMessage({
+                type: "success",
+                text: "All changes saved successfully!",
+            });
+            setTimeout(() => setGlobalMessage({ type: "", text: "" }), 3000);
+        }
+        setIsSaving(false);
     };
 
     if (loading) {
@@ -199,12 +217,36 @@ function TeamRoundConfigSection() {
 
     return (
         <div className="space-y-6">
-            <p className="text-sm text-gray-500 leading-relaxed">
-                Configure questions for the team round. Add sub-parts (e.g. 1a,
-                1b) with individual point values, or leave sub-parts empty for a
-                single-answer question with a flat point value.
-            </p>
+            {/* Global Header & Save */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
+                    Configure question weights. Add sub-parts (e.g. 1a, 1b) with
+                    individual point values, or leave sub-parts empty for a
+                    single-answer question with a flat point value.
+                </p>
+                <div className="flex flex-col items-end shrink-0 gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={saveAllChanges}
+                        disabled={!hasChanges || isSaving}
+                        className={`w-full sm:w-auto px-6 py-2.5 text-sm font-medium rounded-xl shadow-sm transition-all ${
+                            hasChanges && !isSaving
+                                ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95 shadow-blue-300"
+                                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        }`}
+                    >
+                        {isSaving ? "Saving..." : "Save Changes"}
+                    </button>
+                    {globalMessage.text && (
+                        <span
+                            className={`text-xs font-semibold ${globalMessage.type === "success" ? "text-green-600" : "text-red-500"}`}
+                        >
+                            {globalMessage.text}
+                        </span>
+                    )}
+                </div>
+            </div>
 
+            {/* Config Rows */}
             {SUBJECT_ORDER.map((subject) => {
                 const subjectRows = rows.filter((r) => r.subject === subject);
                 return (
@@ -217,8 +259,6 @@ function TeamRoundConfigSection() {
 
                         <div className="space-y-3">
                             {subjectRows.map((row) => {
-                                const isSaving = saving[row.id];
-                                const msg = messages[row.id];
                                 const hasSubParts = row.sub_parts.length > 0;
 
                                 return (
@@ -226,17 +266,15 @@ function TeamRoundConfigSection() {
                                         key={row.id}
                                         className={`rounded-xl border p-4 transition-colors ${
                                             row.dirty
-                                                ? "border-blue-300 bg-blue-50/40"
+                                                ? "border-amber-300 bg-amber-50/40"
                                                 : "border-gray-200 bg-white"
                                         }`}
                                     >
-                                        {/* Row header */}
                                         <div className="flex items-start justify-between gap-4 mb-3">
                                             <span className="text-sm font-semibold text-gray-700 pt-1 w-8 shrink-0">
-                                                {row.question_number}
+                                                Q{row.question_number}
                                             </span>
 
-                                            {/* No sub-parts: single points input */}
                                             {!hasSubParts && (
                                                 <div className="flex items-center gap-2 flex-1">
                                                     <span className="text-xs text-gray-500">
@@ -264,52 +302,19 @@ function TeamRoundConfigSection() {
                                                 </div>
                                             )}
 
-                                            {/* Has sub-parts: preview */}
                                             {hasSubParts && (
                                                 <div className="flex flex-wrap flex-1 items-center">
                                                     {row.sub_parts.map((p) => (
                                                         <PreviewBadge
                                                             key={p.label}
-                                                            label={`${row.question_number}${p.label}`}
+                                                            label={`Q${row.question_number}${p.label}`}
                                                             points={p.points}
                                                         />
                                                     ))}
                                                 </div>
                                             )}
 
-                                            {/* Actions */}
                                             <div className="flex items-center gap-2 shrink-0">
-                                                {msg ? (
-                                                    <span
-                                                        className={`text-xs font-medium ${
-                                                            msg === "Saved!"
-                                                                ? "text-green-600"
-                                                                : "text-red-500"
-                                                        }`}
-                                                    >
-                                                        {msg}
-                                                    </span>
-                                                ) : (
-                                                    <button
-                                                        onClick={() =>
-                                                            saveRow(row)
-                                                        }
-                                                        disabled={
-                                                            !row.dirty ||
-                                                            isSaving
-                                                        }
-                                                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                                                            row.dirty &&
-                                                            !isSaving
-                                                                ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95"
-                                                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                        }`}
-                                                    >
-                                                        {isSaving
-                                                            ? "Saving..."
-                                                            : "Save"}
-                                                    </button>
-                                                )}
                                                 <button
                                                     onClick={() =>
                                                         addSubPart(row.id)
@@ -322,7 +327,6 @@ function TeamRoundConfigSection() {
                                             </div>
                                         </div>
 
-                                        {/* Sub-part editor rows */}
                                         {hasSubParts && (
                                             <div className="space-y-2 pl-8 mt-2 border-t border-gray-100 pt-3">
                                                 {row.sub_parts.map(
@@ -334,7 +338,6 @@ function TeamRoundConfigSection() {
                                                             <span className="text-xs text-gray-400 w-4">
                                                                 {i + 1}.
                                                             </span>
-                                                            {/* Label */}
                                                             <div className="flex items-center gap-1">
                                                                 <span className="text-xs text-gray-500">
                                                                     Label:
@@ -360,7 +363,6 @@ function TeamRoundConfigSection() {
                                                                     className="w-14 px-2 py-1 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                                 />
                                                             </div>
-                                                            {/* Points */}
                                                             <div className="flex items-center gap-1">
                                                                 <span className="text-xs text-gray-500">
                                                                     Points:
@@ -390,7 +392,6 @@ function TeamRoundConfigSection() {
                                                                     className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                                 />
                                                             </div>
-                                                            {/* Remove */}
                                                             <button
                                                                 onClick={() =>
                                                                     removeSubPart(
@@ -419,76 +420,74 @@ function TeamRoundConfigSection() {
     );
 }
 
-// ── Config sections registry ──────────────────────────────────────────────────
+// ── Volunteers Placeholder ────────────────────────────────────────────────────
 
-interface ConfigSection {
-    id: string;
-    label: string;
-    description: string;
-    component: React.ReactNode;
+function VolunteersPlaceholder() {
+    return (
+        <div className="p-12 text-center text-gray-500 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+            <svg
+                className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+                Coming Soon
+            </h3>
+            <p className="text-sm text-gray-500">
+                The volunteer batch importer is currently under development.
+            </p>
+        </div>
+    );
 }
 
 // ── Main ConfigPanel ──────────────────────────────────────────────────────────
 
 export default function ConfigPanel() {
-    const [activeSection, setActiveSection] = useState<string>("team_round");
+    const [activeTab, setActiveTab] = useState<ConfigTab>("team_round");
 
-    const sections: ConfigSection[] = [
-        {
-            id: "team_round",
-            label: "Team Round",
-            description: "Question structure and point values",
-            component: <TeamRoundConfigSection />,
-        },
-        // Add future sections here, e.g.:
-        // { id: "scoring_weights", label: "Scoring Weights", ... }
+    const tabs: { id: ConfigTab; label: string }[] = [
+        { id: "team_round", label: "Team Round" },
+        { id: "import_competitors", label: "Import Competitors" },
+        { id: "import_volunteers", label: "Import Volunteers" },
     ];
-
-    const active = sections.find((s) => s.id === activeSection) ?? sections[0];
 
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                        Tournament Configuration
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                        Manage settings and scoring structures for this
-                        tournament.
-                    </p>
+            <div className="flex flex-col gap-4 mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                    Tournament Configuration
+                </h2>
+                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                                activeTab === tab.id
+                                    ? "bg-white shadow text-blue-700"
+                                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-6">
-                {/* Sidebar */}
-                <nav className="sm:w-48 shrink-0">
-                    <ul className="space-y-1">
-                        {sections.map((s) => (
-                            <li key={s.id}>
-                                <button
-                                    onClick={() => setActiveSection(s.id)}
-                                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                                        activeSection === s.id
-                                            ? "bg-blue-50 text-blue-700"
-                                            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                                    }`}
-                                >
-                                    <div>{s.label}</div>
-                                    <div className="text-xs font-normal text-gray-400 mt-0.5">
-                                        {s.description}
-                                    </div>
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
-
-                {/* Divider */}
-                <div className="hidden sm:block w-px bg-gray-200 self-stretch" />
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">{active.component}</div>
+            <div className="min-w-0">
+                {activeTab === "team_round" && <TeamRoundConfigSection />}
+                {activeTab === "import_competitors" && (
+                    <RegistrationImportPanel />
+                )}
+                {activeTab === "import_volunteers" && <VolunteersPlaceholder />}
             </div>
         </section>
     );

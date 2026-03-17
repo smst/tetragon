@@ -7,6 +7,7 @@ interface ParsedRegistration {
     participantName: string;
     grade: string;
     teamName: string;
+    room: string;
     raw: string[];
 }
 
@@ -43,20 +44,49 @@ export default function RegistrationImportPanel() {
 
         if (lines.length < 2) return;
 
-        const headers = lines[0].split("\t").map((h) => h.trim());
-        const nameIdx = headers.indexOf("Participant Full Name");
-        const gradeIdx = headers.indexOf("Grade");
-        const teamIdx = headers.indexOf("What is your team name?");
+        const headers = lines[0].split("\t").map((h) => h.trim().toLowerCase());
+
+        // Find indices based on the new TSV headers
+        const teamIdx = headers.findIndex(
+            (h) => h === "team" || h.includes("team name"),
+        );
+        const nameIdx = headers.findIndex(
+            (h) => h === "participant names" || h.includes("participant"),
+        );
+        const gradeIdx = headers.findIndex((h) => h === "grade");
+        const roomIdx = headers.findIndex(
+            (h) => h === "room #" || h.includes("room"),
+        );
 
         const parsed: ParsedRegistration[] = [];
+        let currentTeam = "";
+        let currentRoom = "";
 
         for (let i = 1; i < lines.length; i++) {
             const row = lines[i].split("\t");
+
+            const rawTeam = teamIdx !== -1 ? row[teamIdx]?.trim() : "";
+            const rawRoom = roomIdx !== -1 ? row[roomIdx]?.trim() : "";
+            const pName = nameIdx !== -1 ? row[nameIdx]?.trim() : "";
+            const pGrade = gradeIdx !== -1 ? row[gradeIdx]?.trim() : "";
+
+            // In the new format, team and room are only on the first row of the block.
+            // We carry them down to the next rows until a new team name appears.
+            if (rawTeam) {
+                currentTeam = rawTeam;
+                currentRoom = rawRoom;
+            }
+
+            // Skip entirely blank rows or rows with spreadsheet artifacts like 'FALSE'
+            if (!pName || pName.toUpperCase() === "FALSE") {
+                continue;
+            }
+
             parsed.push({
-                participantName:
-                    nameIdx !== -1 ? row[nameIdx]?.trim() || "" : "",
-                grade: gradeIdx !== -1 ? row[gradeIdx]?.trim() || "" : "",
-                teamName: teamIdx !== -1 ? row[teamIdx]?.trim() || "" : "",
+                participantName: pName,
+                grade: pGrade,
+                teamName: currentTeam,
+                room: currentRoom,
                 raw: row,
             });
         }
@@ -103,6 +133,7 @@ export default function RegistrationImportPanel() {
             if (!acc[key]) {
                 acc[key] = {
                     displayName: originalName || "Unassigned",
+                    room: row.room.trim(),
                     members: [],
                 };
             }
@@ -111,7 +142,7 @@ export default function RegistrationImportPanel() {
         },
         {} as Record<
             string,
-            { displayName: string; members: ParsedRegistration[] }
+            { displayName: string; room: string; members: ParsedRegistration[] }
         >,
     );
 
@@ -120,36 +151,58 @@ export default function RegistrationImportPanel() {
         setIsImporting(true);
         setStatusMessage({ type: "", text: "" });
 
-        const uniqueTeams = Array.from(
-            new Set(stagedData.map((d) => d.teamName.trim()).filter(Boolean)),
-        );
+        // Map out the unique teams and their assigned rooms from the staged data
+        const uniqueTeamsToProcess = new Map<
+            string,
+            { name: string; room: number | null }
+        >();
+        stagedData.forEach((d) => {
+            const tName = d.teamName.trim();
+            if (tName) {
+                uniqueTeamsToProcess.set(tName.toLowerCase(), {
+                    name: tName,
+                    room: d.room
+                        ? parseInt(d.room.replace(/\D/g, ""), 10)
+                        : null,
+                });
+            }
+        });
+
         const teamIdMap: Record<string, string> = {};
 
-        for (const teamName of uniqueTeams) {
+        for (const [lowerName, teamData] of uniqueTeamsToProcess.entries()) {
             const { data: existingTeam } = await supabase
                 .from("teams")
                 .select("id")
-                .ilike("name", teamName)
+                .ilike("name", teamData.name)
                 .single();
 
             if (existingTeam) {
-                teamIdMap[teamName.toLowerCase()] = existingTeam.id;
+                // Update the room of the existing team to ensure it matches the sheet
+                if (teamData.room !== null) {
+                    await supabase
+                        .from("teams")
+                        .update({ room: teamData.room })
+                        .eq("id", existingTeam.id);
+                }
+                teamIdMap[lowerName] = existingTeam.id;
             } else {
+                // Insert new team with room
                 const { data: newTeam } = await supabase
                     .from("teams")
-                    .insert({ name: teamName })
+                    .insert({ name: teamData.name, room: teamData.room })
                     .select("id")
                     .single();
 
                 if (newTeam) {
-                    teamIdMap[teamName.toLowerCase()] = newTeam.id;
+                    teamIdMap[lowerName] = newTeam.id;
                 }
             }
         }
 
         const competitorsToInsert = stagedData.map((row) => ({
             name: row.participantName.trim(),
-            grade: row.grade.trim(),
+            grade: row.grade.trim() || null,
             team_id: row.teamName.trim()
                 ? teamIdMap[row.teamName.trim().toLowerCase()]
                 : null,
@@ -175,22 +228,10 @@ export default function RegistrationImportPanel() {
     };
 
     return (
-        <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8 relative">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                        Import Registrations
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                        Upload a Google Sheets TSV export to review and
-                        batch-import competitors and teams.
-                    </p>
-                </div>
-            </div>
-
+        <div className="relative">
             <div className="mb-6 bg-gray-50 border border-gray-200 rounded-xl px-4 py-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Upload TSV File
+                    Upload Formatted TSV File
                 </label>
                 <input
                     type="file"
@@ -215,18 +256,21 @@ export default function RegistrationImportPanel() {
             {stagedData.length > 0 && (
                 <div className="space-y-4">
                     <div className="shadow-md rounded-xl">
-                        <div className="border border-gray-300 rounded-xl overflow-x-auto max-h-150">
+                        <div className="border border-gray-300 rounded-xl overflow-x-auto max-h-[600px]">
                             <table className="min-w-full border-collapse">
                                 <thead className="bg-gray-100 sticky top-0 z-10">
                                     <tr className="border-b border-gray-300">
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Participant Name
                                         </th>
-                                        <th className="w-32 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="w-24 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Grade
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Team Name
+                                        </th>
+                                        <th className="w-32 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Room
                                         </th>
                                     </tr>
                                 </thead>
@@ -273,7 +317,7 @@ export default function RegistrationImportPanel() {
                                                         className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow bg-white"
                                                     />
                                                 </td>
-                                                <td className="w-32 px-6 py-3 whitespace-nowrap">
+                                                <td className="w-24 px-6 py-3 whitespace-nowrap">
                                                     <input
                                                         type="text"
                                                         value={row.grade}
@@ -366,6 +410,20 @@ export default function RegistrationImportPanel() {
                                                             )}
                                                     </div>
                                                 </td>
+                                                <td className="w-32 px-6 py-3 whitespace-nowrap">
+                                                    <input
+                                                        type="text"
+                                                        value={row.room}
+                                                        onChange={(e) =>
+                                                            handleCellChange(
+                                                                i,
+                                                                "room",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow bg-white"
+                                                    />
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -428,15 +486,22 @@ export default function RegistrationImportPanel() {
                                 .sort((a, b) =>
                                     a.displayName.localeCompare(b.displayName),
                                 )
-                                .map(({ displayName, members }) => (
+                                .map(({ displayName, room, members }) => (
                                     <div
                                         key={displayName}
                                         className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
                                     >
                                         <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
-                                            <span className="font-semibold text-gray-800">
-                                                {displayName}
-                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-semibold text-gray-800">
+                                                    {displayName}
+                                                </span>
+                                                {room && (
+                                                    <span className="text-xs font-medium text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-md">
+                                                        Room {room}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
                                                 {members.length}{" "}
                                                 {members.length === 1
@@ -489,6 +554,6 @@ export default function RegistrationImportPanel() {
                     </div>
                 </div>
             )}
-        </section>
+        </div>
     );
 }
