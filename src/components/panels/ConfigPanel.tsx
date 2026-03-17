@@ -233,7 +233,7 @@ function TeamRoundConfigSection() {
                                         {/* Row header */}
                                         <div className="flex items-start justify-between gap-4 mb-3">
                                             <span className="text-sm font-semibold text-gray-700 pt-1 w-8 shrink-0">
-                                                Q{row.question_number}
+                                                {row.question_number}
                                             </span>
 
                                             {/* No sub-parts: single points input */}
@@ -270,7 +270,7 @@ function TeamRoundConfigSection() {
                                                     {row.sub_parts.map((p) => (
                                                         <PreviewBadge
                                                             key={p.label}
-                                                            label={`Q${row.question_number}${p.label}`}
+                                                            label={`${row.question_number}${p.label}`}
                                                             points={p.points}
                                                         />
                                                     ))}

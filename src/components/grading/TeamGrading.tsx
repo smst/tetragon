@@ -85,7 +85,7 @@ function buildUnits(config: TeamRoundConfigRow[]): GradeableUnit[] {
             units.push({
                 key: `${row.subject}_${row.question_number}`,
                 subject: row.subject,
-                label: `Q${row.question_number}`,
+                label: `${row.question_number}`,
                 points: Number(row.points) || 1,
             });
         } else {
@@ -93,7 +93,7 @@ function buildUnits(config: TeamRoundConfigRow[]): GradeableUnit[] {
                 units.push({
                     key: `${row.subject}_${row.question_number}${part.label}`,
                     subject: row.subject,
-                    label: `Q${row.question_number}${part.label}`,
+                    label: `${row.question_number}${part.label}`,
                     points: Number(part.points) || 1,
                 });
             }
@@ -335,8 +335,8 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
             <div
                 className={`px-5 py-3 rounded-xl mb-4 text-md font-medium flex flex-col sm:flex-row justify-between items-center gap-2 ${
                     loadingData
-                        ? "bg-yellow-50 text-yellow-800"
-                        : "bg-blue-50 text-blue-800"
+                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : "bg-gray-100 text-gray-500 border border-gray-200"
                 }`}
             >
                 <span>
