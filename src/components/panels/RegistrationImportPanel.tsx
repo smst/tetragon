@@ -46,17 +46,18 @@ export default function RegistrationImportPanel() {
 
         const headers = lines[0].split("\t").map((h) => h.trim().toLowerCase());
 
-        // Find indices based on the new TSV headers
-        const teamIdx = headers.findIndex(
-            (h) => h === "team" || h.includes("team name"),
-        );
-        const nameIdx = headers.findIndex(
-            (h) => h === "participant names" || h.includes("participant"),
-        );
-        const gradeIdx = headers.findIndex((h) => h === "grade");
-        const roomIdx = headers.findIndex(
-            (h) => h === "room #" || h.includes("room"),
-        );
+        const teamIdx = headers.findIndex((h) => h.includes("team"));
+        const nameIdx = headers.findIndex((h) => h.includes("participant"));
+        const gradeIdx = headers.findIndex((h) => h.includes("grade"));
+        const roomIdx = headers.findIndex((h) => h.includes("room"));
+
+        if (nameIdx === -1) {
+            setStatusMessage({
+                type: "error",
+                text: "Could not locate a participant name column. Check your TSV headers.",
+            });
+            return;
+        }
 
         const parsed: ParsedRegistration[] = [];
         let currentTeam = "";
@@ -70,15 +71,16 @@ export default function RegistrationImportPanel() {
             const pName = nameIdx !== -1 ? row[nameIdx]?.trim() : "";
             const pGrade = gradeIdx !== -1 ? row[gradeIdx]?.trim() : "";
 
-            // In the new format, team and room are only on the first row of the block.
-            // We carry them down to the next rows until a new team name appears.
             if (rawTeam) {
                 currentTeam = rawTeam;
                 currentRoom = rawRoom;
             }
 
-            // Skip entirely blank rows or rows with spreadsheet artifacts like 'FALSE'
-            if (!pName || pName.toUpperCase() === "FALSE") {
+            if (
+                !pName ||
+                pName.toUpperCase() === "FALSE" ||
+                pName.toUpperCase() === "TRUE"
+            ) {
                 continue;
             }
 
@@ -125,24 +127,31 @@ export default function RegistrationImportPanel() {
         a.localeCompare(b),
     );
 
-    const groupedByTeam = stagedData.reduce(
+    const groupedByRoom = stagedData.reduce(
         (acc, row) => {
-            const originalName = row.teamName.trim();
-            const key = originalName.toLowerCase() || "Unassigned";
+            const roomKey = row.room.trim() || "Unassigned";
+            if (!acc[roomKey]) {
+                acc[roomKey] = {};
+            }
 
-            if (!acc[key]) {
-                acc[key] = {
+            const originalName = row.teamName.trim();
+            const teamKey = originalName.toLowerCase() || "Unassigned";
+
+            if (!acc[roomKey][teamKey]) {
+                acc[roomKey][teamKey] = {
                     displayName: originalName || "Unassigned",
-                    room: row.room.trim(),
                     members: [],
                 };
             }
-            acc[key].members.push(row);
+            acc[roomKey][teamKey].members.push(row);
             return acc;
         },
         {} as Record<
             string,
-            { displayName: string; room: string; members: ParsedRegistration[] }
+            Record<
+                string,
+                { displayName: string; members: ParsedRegistration[] }
+            >
         >,
     );
 
@@ -151,7 +160,6 @@ export default function RegistrationImportPanel() {
         setIsImporting(true);
         setStatusMessage({ type: "", text: "" });
 
-        // Map out the unique teams and their assigned rooms from the staged data
         const uniqueTeamsToProcess = new Map<
             string,
             { name: string; room: number | null }
@@ -162,7 +170,7 @@ export default function RegistrationImportPanel() {
                 uniqueTeamsToProcess.set(tName.toLowerCase(), {
                     name: tName,
                     room: d.room
-                        ? parseInt(d.room.replace(/\D/g, ""), 10)
+                        ? parseInt(d.room.replace(/\D/g, ""), 10) || null
                         : null,
                 });
             }
@@ -178,7 +186,6 @@ export default function RegistrationImportPanel() {
                 .single();
 
             if (existingTeam) {
-                // Update the room of the existing team to ensure it matches the sheet
                 if (teamData.room !== null) {
                     await supabase
                         .from("teams")
@@ -187,7 +194,6 @@ export default function RegistrationImportPanel() {
                 }
                 teamIdMap[lowerName] = existingTeam.id;
             } else {
-                // Insert new team with room
                 const { data: newTeam } = await supabase
                     .from("teams")
                     .insert({ name: teamData.name, room: teamData.room })
@@ -450,7 +456,7 @@ export default function RegistrationImportPanel() {
 
             {showConfirm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
                         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900">
@@ -481,54 +487,94 @@ export default function RegistrationImportPanel() {
                             </button>
                         </div>
 
-                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50 space-y-4">
-                            {Object.values(groupedByTeam)
-                                .sort((a, b) =>
-                                    a.displayName.localeCompare(b.displayName),
-                                )
-                                .map(({ displayName, room, members }) => (
-                                    <div
-                                        key={displayName}
-                                        className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
-                                    >
-                                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
-                                            <div className="flex items-center gap-3">
-                                                <span className="font-semibold text-gray-800">
-                                                    {displayName}
-                                                </span>
-                                                {room && (
-                                                    <span className="text-xs font-medium text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-md">
-                                                        Room {room}
-                                                    </span>
+                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50 space-y-8">
+                            {Object.entries(groupedByRoom)
+                                .sort(([roomA], [roomB]) => {
+                                    if (roomA === "Unassigned") return 1;
+                                    if (roomB === "Unassigned") return -1;
+                                    const numA = parseInt(roomA, 10);
+                                    const numB = parseInt(roomB, 10);
+                                    if (!isNaN(numA) && !isNaN(numB))
+                                        return numA - numB;
+                                    return roomA.localeCompare(roomB);
+                                })
+                                .map(([room, teamsMap]) => (
+                                    <div key={room} className="space-y-4">
+                                        <h4 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2">
+                                            {room === "Unassigned"
+                                                ? "Unassigned Room"
+                                                : `Room ${room}`}
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {Object.values(teamsMap)
+                                                .sort((a, b) =>
+                                                    a.displayName.localeCompare(
+                                                        b.displayName,
+                                                    ),
+                                                )
+                                                .map(
+                                                    ({
+                                                        displayName,
+                                                        members,
+                                                    }) => (
+                                                        <div
+                                                            key={displayName}
+                                                            className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
+                                                        >
+                                                            <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
+                                                                <span className="font-semibold text-gray-800">
+                                                                    {
+                                                                        displayName
+                                                                    }
+                                                                </span>
+                                                                <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
+                                                                    {
+                                                                        members.length
+                                                                    }{" "}
+                                                                    {members.length ===
+                                                                    1
+                                                                        ? "Member"
+                                                                        : "Members"}
+                                                                </span>
+                                                            </div>
+                                                            <div className="p-3">
+                                                                <ul className="flex flex-col gap-2">
+                                                                    {members.map(
+                                                                        (
+                                                                            m,
+                                                                            idx,
+                                                                        ) => (
+                                                                            <li
+                                                                                key={
+                                                                                    idx
+                                                                                }
+                                                                                className="text-sm text-gray-600 flex items-center justify-between"
+                                                                            >
+                                                                                <div className="flex items-center gap-2 truncate">
+                                                                                    <span className="w-1.5 h-1.5 shrink-0 bg-blue-400 rounded-full"></span>
+                                                                                    <span className="truncate">
+                                                                                        {m.participantName || (
+                                                                                            <span className="italic text-gray-400">
+                                                                                                Unnamed
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span className="text-gray-400 text-xs shrink-0 pl-2">
+                                                                                    (Grade{" "}
+                                                                                    {m.grade ||
+                                                                                        "?"}
+
+                                                                                    )
+                                                                                </span>
+                                                                            </li>
+                                                                        ),
+                                                                    )}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    ),
                                                 )}
-                                            </div>
-                                            <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
-                                                {members.length}{" "}
-                                                {members.length === 1
-                                                    ? "Member"
-                                                    : "Members"}
-                                            </span>
-                                        </div>
-                                        <div className="p-3">
-                                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                {members.map((m, idx) => (
-                                                    <li
-                                                        key={idx}
-                                                        className="text-sm text-gray-600 flex items-center gap-2"
-                                                    >
-                                                        <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                                                        {m.participantName || (
-                                                            <span className="italic text-gray-400">
-                                                                Unnamed
-                                                            </span>
-                                                        )}
-                                                        <span className="text-gray-400 text-xs">
-                                                            (Grade{" "}
-                                                            {m.grade || "?"})
-                                                        </span>
-                                                    </li>
-                                                ))}
-                                            </ul>
                                         </div>
                                     </div>
                                 ))}
