@@ -45,14 +45,17 @@ export default function RegistrationImportPanel() {
         if (lines.length < 2) return;
 
         const headers = lines[0].split("\t").map((h) => h.trim().toLowerCase());
-        
-        const teamIdx = headers.findIndex(h => h.includes("team"));
-        const nameIdx = headers.findIndex(h => h.includes("participant"));
-        const gradeIdx = headers.findIndex(h => h.includes("grade"));
-        const roomIdx = headers.findIndex(h => h.includes("room"));
+
+        const teamIdx = headers.findIndex((h) => h.includes("team"));
+        const nameIdx = headers.findIndex((h) => h.includes("participant"));
+        const gradeIdx = headers.findIndex((h) => h.includes("grade"));
+        const roomIdx = headers.findIndex((h) => h.includes("room"));
 
         if (nameIdx === -1) {
-            setStatusMessage({ type: "error", text: "Could not locate a participant name column. Check your TSV headers." });
+            setStatusMessage({
+                type: "error",
+                text: "Could not locate a participant name column. Check your TSV headers.",
+            });
             return;
         }
 
@@ -62,7 +65,7 @@ export default function RegistrationImportPanel() {
 
         for (let i = 1; i < lines.length; i++) {
             const row = lines[i].split("\t");
-            
+
             const rawTeam = teamIdx !== -1 ? row[teamIdx]?.trim() : "";
             const rawRoom = roomIdx !== -1 ? row[roomIdx]?.trim() : "";
             const pName = nameIdx !== -1 ? row[nameIdx]?.trim() : "";
@@ -73,7 +76,11 @@ export default function RegistrationImportPanel() {
                 currentRoom = rawRoom;
             }
 
-            if (!pName || pName.toUpperCase() === "FALSE" || pName.toUpperCase() === "TRUE") {
+            if (
+                !pName ||
+                pName.toUpperCase() === "FALSE" ||
+                pName.toUpperCase() === "TRUE"
+            ) {
                 continue;
             }
 
@@ -126,7 +133,7 @@ export default function RegistrationImportPanel() {
             if (!acc[roomKey]) {
                 acc[roomKey] = {};
             }
-            
+
             const originalName = row.teamName.trim();
             const teamKey = originalName.toLowerCase() || "Unassigned";
 
@@ -139,7 +146,13 @@ export default function RegistrationImportPanel() {
             acc[roomKey][teamKey].members.push(row);
             return acc;
         },
-        {} as Record<string, Record<string, { displayName: string; members: ParsedRegistration[] }>>
+        {} as Record<
+            string,
+            Record<
+                string,
+                { displayName: string; members: ParsedRegistration[] }
+            >
+        >,
     );
 
     const handleImport = async () => {
@@ -148,25 +161,34 @@ export default function RegistrationImportPanel() {
         setStatusMessage({ type: "", text: "" });
 
         try {
-            const uniqueTeamsToProcess = new Map<string, { name: string, room: number | null }>();
-            stagedData.forEach(d => {
+            const uniqueTeamsToProcess = new Map<
+                string,
+                { name: string; room: number | null }
+            >();
+            stagedData.forEach((d) => {
                 const tName = d.teamName.trim();
                 if (tName) {
                     uniqueTeamsToProcess.set(tName.toLowerCase(), {
                         name: tName,
-                        room: d.room ? parseInt(d.room.replace(/\D/g, ''), 10) || null : null
+                        room: d.room
+                            ? parseInt(d.room.replace(/\D/g, ""), 10) || null
+                            : null,
                     });
                 }
             });
 
             const teamIdMap: Record<string, string> = {};
 
-            for (const [lowerName, teamData] of uniqueTeamsToProcess.entries()) {
-                const { data: existingTeam, error: searchError } = await supabase
-                    .from("teams")
-                    .select("id")
-                    .ilike("name", teamData.name)
-                    .maybeSingle();
+            for (const [
+                lowerName,
+                teamData,
+            ] of uniqueTeamsToProcess.entries()) {
+                const { data: existingTeam, error: searchError } =
+                    await supabase
+                        .from("teams")
+                        .select("id")
+                        .ilike("name", teamData.name)
+                        .maybeSingle();
 
                 if (searchError) throw searchError;
 
@@ -196,9 +218,12 @@ export default function RegistrationImportPanel() {
 
             const competitorsToInsert = stagedData.map((row) => ({
                 name: row.participantName.trim(),
-                grade: row.grade.trim() || null,
+                // Strips all letters/symbols and parses the remaining number
+                grade: row.grade.trim()
+                    ? parseInt(row.grade.replace(/\D/g, ""), 10) || null
+                    : null,
                 team_id: row.teamName.trim()
-                    ? (teamIdMap[row.teamName.trim().toLowerCase()] || null)
+                    ? teamIdMap[row.teamName.trim().toLowerCase()] || null
                     : null,
             }));
 
@@ -484,60 +509,86 @@ export default function RegistrationImportPanel() {
                                     if (roomB === "Unassigned") return -1;
                                     const numA = parseInt(roomA, 10);
                                     const numB = parseInt(roomB, 10);
-                                    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                                    if (!isNaN(numA) && !isNaN(numB))
+                                        return numA - numB;
                                     return roomA.localeCompare(roomB);
                                 })
                                 .map(([room, teamsMap]) => (
                                     <div key={room} className="space-y-4">
                                         <h4 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2">
-                                            {room === "Unassigned" ? "Unassigned Room" : `Room ${room}`}
+                                            {room === "Unassigned"
+                                                ? "Unassigned Room"
+                                                : `Room ${room}`}
                                         </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {Object.values(teamsMap)
-                                                .sort((a, b) => a.displayName.localeCompare(b.displayName))
-                                                .map(({ displayName, members }) => (
-                                                    <div
-                                                        key={displayName}
-                                                        className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
-                                                    >
-                                                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
-                                                            <span className="font-semibold text-gray-800">
-                                                                {displayName}
-                                                            </span>
-                                                            <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
-                                                                {members.length}{" "}
-                                                                {members.length === 1
-                                                                    ? "Member"
-                                                                    : "Members"}
-                                                            </span>
-                                                        </div>
-                                                        <div className="p-3">
-                                                            <ul className="flex flex-col gap-2">
-                                                                {members.map((m, idx) => (
-                                                                    <li
-                                                                        key={idx}
-                                                                        className="text-sm text-gray-600 flex items-center justify-between"
-                                                                    >
-                                                                        <div className="flex items-center gap-2 truncate">
-                                                                            <span className="w-1.5 h-1.5 shrink-0 bg-blue-400 rounded-full"></span>
-                                                                            <span className="truncate">
-                                                                                {m.participantName || (
-                                                                                    <span className="italic text-gray-400">
-                                                                                        Unnamed
+                                                .sort((a, b) =>
+                                                    a.displayName.localeCompare(
+                                                        b.displayName,
+                                                    ),
+                                                )
+                                                .map(
+                                                    ({
+                                                        displayName,
+                                                        members,
+                                                    }) => (
+                                                        <div
+                                                            key={displayName}
+                                                            className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
+                                                        >
+                                                            <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
+                                                                <span className="font-semibold text-gray-800">
+                                                                    {
+                                                                        displayName
+                                                                    }
+                                                                </span>
+                                                                <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
+                                                                    {
+                                                                        members.length
+                                                                    }{" "}
+                                                                    {members.length ===
+                                                                    1
+                                                                        ? "Member"
+                                                                        : "Members"}
+                                                                </span>
+                                                            </div>
+                                                            <div className="p-3">
+                                                                <ul className="flex flex-col gap-2">
+                                                                    {members.map(
+                                                                        (
+                                                                            m,
+                                                                            idx,
+                                                                        ) => (
+                                                                            <li
+                                                                                key={
+                                                                                    idx
+                                                                                }
+                                                                                className="text-sm text-gray-600 flex items-center justify-between"
+                                                                            >
+                                                                                <div className="flex items-center gap-2 truncate">
+                                                                                    <span className="w-1.5 h-1.5 shrink-0 bg-blue-400 rounded-full"></span>
+                                                                                    <span className="truncate">
+                                                                                        {m.participantName || (
+                                                                                            <span className="italic text-gray-400">
+                                                                                                Unnamed
+                                                                                            </span>
+                                                                                        )}
                                                                                     </span>
-                                                                                )}
-                                                                            </span>
-                                                                        </div>
-                                                                        <span className="text-gray-400 text-xs shrink-0 pl-2">
-                                                                            (Grade{" "}
-                                                                            {m.grade || "?"})
-                                                                        </span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
+                                                                                </div>
+                                                                                <span className="text-gray-400 text-xs shrink-0 pl-2">
+                                                                                    (Grade{" "}
+                                                                                    {m.grade ||
+                                                                                        "?"}
+                                                                                    )
+                                                                                </span>
+                                                                            </li>
+                                                                        ),
+                                                                    )}
+                                                                </ul>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ),
+                                                )}
                                         </div>
                                     </div>
                                 ))}
