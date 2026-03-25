@@ -128,7 +128,11 @@ export default function ProctorGuidePanel() {
                     </p>
                     <p>
                         On the day of the event, please remember to bring a
-                        laptop and charger.
+                        laptop and charger.{" "}
+                        <strong>
+                            For any issues you have on tournament day, please
+                            text Sophie Liang on Remind.
+                        </strong>
                     </p>
 
                     {(shift === "morning" || shift === "full-day") && (
@@ -179,20 +183,25 @@ export default function ProctorGuidePanel() {
                             </h3>
                             <p>
                                 Fill out the morning attendance on the volunteer
-                                portal. If any team has fewer than 4 members,
-                                message Sophie on Remind. Once your attendance
-                                is complete, read the following:
+                                portal.{" "}
+                                <strong>
+                                    Make sure to click &quot;Submit
+                                    Attendance&quot;.
+                                </strong>{" "}
+                                If any team has fewer than 4 members, message
+                                Sophie on Remind. Once your attendance is
+                                complete, read the following:
                             </p>
 
                             <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4 bg-gray-50">
                                 <p>
-                                    Please put away phones, smartwatches,
+                                    Please put your phones, smartwatches,
                                     calculators, and any other electronic
-                                    devices. Place your bags at the front of the
-                                    room. You should only have pencils or pens
-                                    and an eraser with you. Please keep your
-                                    water bottles on the floor to avoid spilling
-                                    water on your papers.
+                                    devices in your bags. Place your bags at the
+                                    front of the room. You should only have
+                                    pencils or pens and an eraser with you.
+                                    Please keep your water bottles on the floor
+                                    to avoid spilling water on your papers.
                                 </p>
                             </div>
 
@@ -568,7 +577,7 @@ export default function ProctorGuidePanel() {
                                 Design Challenge
                             </h3>
                             <p>
-                                By 12:35, you should be back at your assigned
+                                By 12:35, you should be at your assigned
                                 afternoon room. As the students make their way
                                 back to the classroom, please fill out the
                                 afternoon attendance on the volunteer portal. If
@@ -678,7 +687,8 @@ export default function ProctorGuidePanel() {
                             <p className="italic">
                                 Note: Due to timing, it is possible that the
                                 students won't be able to watch us test their
-                                sailboat.
+                                sailboat. If this happens, please have your
+                                students write the team name on their boats.
                             </p>
                             <h3 className="text-lg font-bold text-gray-800 pt-4">
                                 Team Round
