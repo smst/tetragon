@@ -39,9 +39,7 @@ export async function GET(request: Request) {
 
         const { data: roles, error: rolesError } = await supabaseAdmin
             .from("user_roles")
-            .select(
-                "id, role, morning_room, afternoon_room, checked_in, checked_out",
-            );
+            .select("id, role, morning_room, afternoon_room, checked_in");
         if (rolesError) throw rolesError;
 
         const merged = authData.users.map((u) => {
@@ -54,7 +52,6 @@ export async function GET(request: Request) {
                 morning_room: r?.morning_room ?? null,
                 afternoon_room: r?.afternoon_room ?? null,
                 checked_in: r?.checked_in ?? false,
-                checked_out: r?.checked_out ?? false,
             };
         });
 
@@ -100,14 +97,8 @@ export async function PATCH(request: Request) {
     try {
         const adminUser = await checkAdmin(request);
         const body = await request.json();
-        const {
-            userId,
-            newRole,
-            morning_room,
-            afternoon_room,
-            checked_in,
-            checked_out,
-        } = body;
+        const { userId, newRole, morning_room, afternoon_room, checked_in } =
+            body;
 
         if (!userId) throw new Error("userId is required");
         if (adminUser.id === userId)
@@ -129,10 +120,9 @@ export async function PATCH(request: Request) {
             updated = true;
         }
 
-        if (checked_in !== undefined || checked_out !== undefined) {
+        if (checked_in !== undefined) {
             const payload: any = {};
             if (checked_in !== undefined) payload.checked_in = checked_in;
-            if (checked_out !== undefined) payload.checked_out = checked_out;
 
             const { error } = await supabaseAdmin
                 .from("user_roles")
