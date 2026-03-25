@@ -29,8 +29,6 @@ async function checkAdmin(request: Request) {
     return user;
 }
 
-// ── GET: list all users with roles, rooms, and last sign-in ──────────────────
-
 export async function GET(request: Request) {
     try {
         await checkAdmin(request);
@@ -41,7 +39,9 @@ export async function GET(request: Request) {
 
         const { data: roles, error: rolesError } = await supabaseAdmin
             .from("user_roles")
-            .select("id, role, morning_room, afternoon_room");
+            .select(
+                "id, role, morning_room, afternoon_room, checked_in, checked_out",
+            );
         if (rolesError) throw rolesError;
 
         const merged = authData.users.map((u) => {
@@ -49,11 +49,12 @@ export async function GET(request: Request) {
             return {
                 id: u.id,
                 email: u.email,
-                // last_sign_in_at comes from auth.users via admin API
                 last_sign_in: u.last_sign_in_at ?? null,
                 role: r?.role ?? "unassigned",
                 morning_room: r?.morning_room ?? null,
                 afternoon_room: r?.afternoon_room ?? null,
+                checked_in: r?.checked_in ?? false,
+                checked_out: r?.checked_out ?? false,
             };
         });
 
@@ -63,8 +64,6 @@ export async function GET(request: Request) {
     }
 }
 
-// ── POST: invite new user or resend invite ───────────────────────────────────
-
 export async function POST(request: Request) {
     try {
         await checkAdmin(request);
@@ -72,13 +71,11 @@ export async function POST(request: Request) {
 
         if (!email) throw new Error("Email is required");
 
-        // Dynamically grab the origin URL from the request to guarantee a valid redirect path
         const requestUrl = new URL(request.url);
         const origin = requestUrl.origin;
         const redirectUrl = `${origin}/auth/confirm?next=/reset-password`;
 
         if (resend) {
-            // resetPasswordForEmail actively dispatches a recovery email.
             const { error } = await supabaseAdmin.auth.resetPasswordForEmail(
                 email,
                 { redirectTo: redirectUrl },
@@ -86,7 +83,6 @@ export async function POST(request: Request) {
 
             if (error) throw error;
         } else {
-            // Invite new user — creates auth record + sends email
             const { data, error } =
                 await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
                     redirectTo: redirectUrl,
@@ -100,13 +96,18 @@ export async function POST(request: Request) {
     }
 }
 
-// ── PATCH: update role OR room assignments ───────────────────────────────────
-
 export async function PATCH(request: Request) {
     try {
         const adminUser = await checkAdmin(request);
         const body = await request.json();
-        const { userId } = body;
+        const {
+            userId,
+            newRole,
+            morning_room,
+            afternoon_room,
+            checked_in,
+            checked_out,
+        } = body;
 
         if (!userId) throw new Error("userId is required");
         if (adminUser.id === userId)
@@ -114,51 +115,64 @@ export async function PATCH(request: Request) {
                 "Action denied: You cannot modify your own account.",
             );
 
-        // Room assignment update — use update, not upsert, to avoid nulling other columns
-        if (
-            body.morning_room !== undefined ||
-            body.afternoon_room !== undefined
-        ) {
+        let updated = false;
+
+        if (morning_room !== undefined || afternoon_room !== undefined) {
             const { error } = await supabaseAdmin
                 .from("user_roles")
                 .update({
-                    morning_room: body.morning_room ?? null,
-                    afternoon_room: body.afternoon_room ?? null,
+                    morning_room: morning_room ?? null,
+                    afternoon_room: afternoon_room ?? null,
                 })
                 .eq("id", userId);
             if (error) throw error;
-            return NextResponse.json({ success: true });
+            updated = true;
         }
 
-        // Role update — use update, fallback to insert if the row is missing
-        if (body.newRole !== undefined) {
+        if (checked_in !== undefined || checked_out !== undefined) {
+            const payload: any = {};
+            if (checked_in !== undefined) payload.checked_in = checked_in;
+            if (checked_out !== undefined) payload.checked_out = checked_out;
+
+            const { error } = await supabaseAdmin
+                .from("user_roles")
+                .update(payload)
+                .eq("id", userId);
+            if (error) throw error;
+            updated = true;
+        }
+
+        if (newRole !== undefined) {
             const { data, error } = await supabaseAdmin
                 .from("user_roles")
-                .update({ role: body.newRole })
+                .update({ role: newRole })
                 .eq("id", userId)
                 .select();
 
             if (error) throw error;
 
-            // If data is empty, the user was "unassigned" (no row existed). Insert it now.
             if (!data || data.length === 0) {
                 const { error: insertError } = await supabaseAdmin
                     .from("user_roles")
-                    .insert({ id: userId, role: body.newRole });
+                    .insert({ id: userId, role: newRole });
 
                 if (insertError) throw insertError;
             }
 
-            return NextResponse.json({ success: true });
+            updated = true;
         }
 
-        throw new Error("Nothing to update — provide newRole or room fields.");
+        if (!updated) {
+            throw new Error(
+                "Nothing to update — provide newRole, room, or attendance fields.",
+            );
+        }
+
+        return NextResponse.json({ success: true });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
-
-// ── DELETE: remove user from auth + user_roles ───────────────────────────────
 
 export async function DELETE(request: Request) {
     try {

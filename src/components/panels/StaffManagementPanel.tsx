@@ -4,8 +4,6 @@ import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { UserRole } from "@/types";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface StaffMember {
     id: string;
     email: string;
@@ -13,12 +11,12 @@ interface StaffMember {
     last_sign_in: string | null;
     morning_room: number | null;
     afternoon_room: number | null;
+    checked_in?: boolean;
+    checked_out?: boolean;
 }
 
 type ModalType = "delete" | "role" | "invite" | "rooms" | null;
 type ViewTab = "committee" | "proctors" | "unassigned";
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatLastSeen(raw: string | null): string {
     if (!raw) return "Never";
@@ -68,8 +66,6 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
     { value: "admin", label: "Admin" },
 ];
 
-// ── Role badge ────────────────────────────────────────────────────────────────
-
 function RoleBadge({ role }: { role: UserRole }) {
     const styles: Record<UserRole, string> = {
         admin: "text-purple-700 bg-purple-50 border-purple-200",
@@ -86,8 +82,6 @@ function RoleBadge({ role }: { role: UserRole }) {
     );
 }
 
-// ── Room badge ────────────────────────────────────────────────────────────────
-
 function RoomBadge({ label, room }: { label: string; room: number | null }) {
     return (
         <span className="text-xs text-gray-500">
@@ -96,10 +90,6 @@ function RoomBadge({ label, room }: { label: string; room: number | null }) {
         </span>
     );
 }
-
-// ── Manage dropdown ───────────────────────────────────────────────────────────
-// Defined OUTSIDE the main component so React never recreates it on re-render,
-// which would reset useState and break open/close state.
 
 interface ManageMenuProps {
     user: StaffMember;
@@ -135,7 +125,7 @@ function ManageMenu({
         const handleScroll = () => setOpen(false);
 
         document.addEventListener("mousedown", handleMouseDown);
-        window.addEventListener("scroll", handleScroll, true); // capture: true catches all scroll events
+        window.addEventListener("scroll", handleScroll, true);
         return () => {
             document.removeEventListener("mousedown", handleMouseDown);
             window.removeEventListener("scroll", handleScroll, true);
@@ -143,8 +133,6 @@ function ManageMenu({
     }, []);
 
     const handleOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
-        // Guard against double-firing (happens when ManageMenu is accidentally
-        // rendered twice in the tree — two instances both respond to the same click)
         if (e.timeStamp === lastEventRef.current) return;
         lastEventRef.current = e.timeStamp;
 
@@ -220,25 +208,30 @@ function ManageMenu({
     );
 }
 
-// ── User table ────────────────────────────────────────────────────────────────
-// Also defined OUTSIDE to avoid remounting ManageMenu on every parent re-render.
-
 interface UserTableProps {
     list: StaffMember[];
     showRooms: boolean;
+    showAttendance: boolean;
     onRole: (user: StaffMember) => void;
     onRooms: (user: StaffMember) => void;
     onResend: (user: StaffMember) => void;
     onDelete: (user: StaffMember) => void;
+    onToggleAttendance?: (
+        user: StaffMember,
+        field: "checked_in" | "checked_out",
+        value: boolean,
+    ) => void;
 }
 
 function UserTable({
     list,
     showRooms,
+    showAttendance,
     onRole,
     onRooms,
     onResend,
     onDelete,
+    onToggleAttendance,
 }: UserTableProps) {
     return (
         <div className="shadow-md rounded-xl">
@@ -246,10 +239,10 @@ function UserTable({
                 <table className="min-w-full border-collapse">
                     <thead className="bg-gray-100">
                         <tr className="border-b border-gray-300">
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-72">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
                                 User
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                                 Last Active
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -258,6 +251,11 @@ function UserTable({
                             {showRooms && (
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Rooms
+                                </th>
+                            )}
+                            {showAttendance && (
+                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Attendance
                                 </th>
                             )}
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -269,7 +267,9 @@ function UserTable({
                         {list.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={showRooms ? 5 : 4}
+                                    colSpan={
+                                        showRooms ? (showAttendance ? 6 : 5) : 4
+                                    }
                                     className="px-6 py-8 text-center text-sm text-gray-400 italic"
                                 >
                                     No users in this group.
@@ -287,7 +287,7 @@ function UserTable({
                                         key={user.id}
                                         className="border-b border-gray-200 hover:bg-gray-50 transition-colors last:border-0"
                                     >
-                                        <td className="px-6 py-4 w-72 max-w-72">
+                                        <td className="px-6 py-4 w-64 max-w-xs">
                                             <div className="text-sm font-medium text-gray-900 truncate">
                                                 {user.email}
                                             </div>
@@ -337,6 +337,35 @@ function UserTable({
                                                 </div>
                                             </td>
                                         )}
+                                        {showAttendance && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <button
+                                                        onClick={() =>
+                                                            onToggleAttendance?.(
+                                                                user,
+                                                                "checked_in",
+                                                                !user.checked_in,
+                                                            )
+                                                        }
+                                                        className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer w-24 text-center ${
+                                                            user.checked_in
+                                                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                                        }`}
+                                                    >
+                                                        {user.checked_in
+                                                            ? "Checked In"
+                                                            : "Check In"}
+                                                    </button>
+                                                    {user.checked_out && (
+                                                        <span className="text-xs font-bold text-gray-400">
+                                                            Checked Out
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
                                             <ManageMenu
                                                 user={user}
@@ -359,8 +388,6 @@ function UserTable({
         </div>
     );
 }
-
-// ── Main component ────────────────────────────────────────────────────────────
 
 export default function UserManagementPanel() {
     const [users, setUsers] = useState<StaffMember[]>([]);
@@ -407,7 +434,6 @@ export default function UserManagementPanel() {
     const unassignedUsers = users.filter((u) => u.role === "unassigned");
 
     useEffect(() => {
-        // Auto-switch away if the unassigned tab becomes empty while viewing it
         if (
             activeTab === "unassigned" &&
             unassignedUsers.length === 0 &&
@@ -416,8 +442,6 @@ export default function UserManagementPanel() {
             setActiveTab("committee");
         }
     }, [users, activeTab, unassignedUsers.length]);
-
-    // ── Handlers ─────────────────────────────────────────────────────────────
 
     const openInvite = () => {
         setInviteEmail("");
@@ -542,6 +566,36 @@ export default function UserManagementPanel() {
         }
     };
 
+    const handleToggleAttendance = async (
+        user: StaffMember,
+        field: "checked_in" | "checked_out",
+        value: boolean,
+    ) => {
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+        const res = await fetch("/api/admin/users", {
+            method: "PATCH",
+            headers: {
+                Authorization: `Bearer ${session!.access_token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                userId: user.id,
+                [field]: value,
+            }),
+        });
+        if (res.ok) {
+            setUsers(
+                users.map((u) =>
+                    u.id === user.id ? { ...u, [field]: value } : u,
+                ),
+            );
+        } else {
+            alert("Failed to update attendance.");
+        }
+    };
+
     const openDelete = (user: StaffMember) => {
         setTargetUser(user);
         setModalStatus("");
@@ -601,8 +655,6 @@ export default function UserManagementPanel() {
         setModalStatus("");
     };
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
     if (loading)
         return (
             <div className="p-4 text-gray-500 text-center animate-pulse">
@@ -615,7 +667,6 @@ export default function UserManagementPanel() {
         { id: "proctors", label: "Proctors", count: proctorUsers.length },
     ];
 
-    // Conditionally inject the Unassigned tab
     if (unassignedUsers.length > 0) {
         tabs.push({
             id: "unassigned",
@@ -660,6 +711,7 @@ export default function UserManagementPanel() {
                 <UserTable
                     list={committeeUsers}
                     showRooms={false}
+                    showAttendance={false}
                     onRole={openRole}
                     onRooms={openRooms}
                     onResend={handleResend}
@@ -670,16 +722,19 @@ export default function UserManagementPanel() {
                 <UserTable
                     list={proctorUsers}
                     showRooms={true}
+                    showAttendance={true}
                     onRole={openRole}
                     onRooms={openRooms}
                     onResend={handleResend}
                     onDelete={openDelete}
+                    onToggleAttendance={handleToggleAttendance}
                 />
             )}
             {activeTab === "unassigned" && (
                 <UserTable
                     list={unassignedUsers}
                     showRooms={false}
+                    showAttendance={false}
                     onRole={openRole}
                     onRooms={openRooms}
                     onResend={handleResend}
@@ -696,18 +751,16 @@ export default function UserManagementPanel() {
                 </button>
             </div>
 
-            {/* ── Modals ── */}
             {modalType && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-                        {/* INVITE */}
                         {modalType === "invite" && (
                             <>
                                 <h3 className="text-lg font-bold text-gray-900 mb-1">
                                     Create New User
                                 </h3>
                                 <p className="text-sm text-gray-500 mb-5">
-                                    They'll receive an email to set their
+                                    They&apos;ll receive an email to set their
                                     password. Their role will be{" "}
                                     <span className="font-medium">
                                         Unassigned
@@ -758,7 +811,6 @@ export default function UserManagementPanel() {
                             </>
                         )}
 
-                        {/* CHANGE ROLE */}
                         {modalType === "role" && (
                             <>
                                 <h3 className="text-lg font-bold text-gray-900 mb-1">
@@ -815,7 +867,6 @@ export default function UserManagementPanel() {
                             </>
                         )}
 
-                        {/* ASSIGN ROOMS */}
                         {modalType === "rooms" && (
                             <>
                                 <h3 className="text-lg font-bold text-gray-900 mb-1">
@@ -883,7 +934,6 @@ export default function UserManagementPanel() {
                             </>
                         )}
 
-                        {/* DELETE */}
                         {modalType === "delete" && (
                             <>
                                 <h3 className="text-lg font-bold text-gray-900 mb-1">

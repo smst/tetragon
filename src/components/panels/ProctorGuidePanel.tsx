@@ -522,8 +522,6 @@ export default function ProctorGuidePanel() {
                                 bring your teams to the main hallway (near the
                                 STEAM room). Once your students are where they
                                 are supposed to be, you are free to leave.
-                                Please make sure to sign out on the volunteer
-                                portal below.
                             </p>
                         </>
                     )}
