@@ -85,7 +85,7 @@ export default function ProctorGuidePanel() {
                         following:
                     </p>
 
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         <p>
                             Please put away phones, smartwatches, calculators,
                             and any other electronic devices. Place your bags at
@@ -100,7 +100,7 @@ export default function ProctorGuidePanel() {
                         Once they are back in their seats, read the following:
                     </p>
 
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         <p>
                             Cheating in any form&mdash;including collaboration
                             with other participants or the use of calculators,
@@ -142,7 +142,7 @@ export default function ProctorGuidePanel() {
                         <span className="font-bold">Individual Math Round</span>
                         , read the following:
                     </p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         <p>
                             We are now handing out the math rounds, answer
                             sheets, and scrap paper. Do not open the packet
@@ -158,7 +158,7 @@ export default function ProctorGuidePanel() {
                         per person. Then, read the following:
                     </p>
 
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         <p>
                             You have one answer sheet for all your answers.
                             Please indicate your answer for multiple-choice
@@ -186,7 +186,7 @@ export default function ProctorGuidePanel() {
                         Give the students time to fill in the information. Then,
                         emphasize the following:
                     </p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         Your answer sheet will be read using a scanner, so if
                         you fill it out incorrectly, it will not be scored
                         properly. If you don't know how to fill out the answer
@@ -197,7 +197,7 @@ export default function ProctorGuidePanel() {
                         If you don't know the answer to a question, ask us on
                         Remind. Then, read the following:
                     </p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         <p>
                             You will have 45 minutes to answer the 15
                             multiple-choice and 5 short-answer questions in your
@@ -231,7 +231,7 @@ export default function ProctorGuidePanel() {
                         <strong>Remember to give a 5-minute warning.</strong>{" "}
                         When time is up, read the following:
                     </p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         Stop, time's up. Put your pencils down and close your
                         question packets. We will now come around and collect
                         all your papers for this round.
@@ -246,7 +246,7 @@ export default function ProctorGuidePanel() {
                         collect the folder.
                     </p>
                     <p>Text Remind "Room ---- is done with the math round".</p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         We will now have a 10-minute break before we start the
                         science round. Stay in the classroom unless you need to
                         use the bathroom.
@@ -268,7 +268,7 @@ export default function ProctorGuidePanel() {
                         </span>
                         , read the following:
                     </p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         <p>
                             We are now handing out the science rounds, answer
                             sheets, and scrap paper. Do not open the packet
@@ -284,7 +284,7 @@ export default function ProctorGuidePanel() {
                         per person. Then, read the following:
                     </p>
 
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         <p>
                             You have one answer sheet for all your answers.
                             Please indicate your answer for multiple-choice
@@ -312,7 +312,7 @@ export default function ProctorGuidePanel() {
                         Give the students time to fill in the information. Then,
                         emphasize the following:
                     </p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         Your answer sheet will be read using a scanner, so if
                         you fill it out incorrectly, it will not be scored
                         properly. If you don't know how to fill out the answer
@@ -323,7 +323,7 @@ export default function ProctorGuidePanel() {
                         If you don't know the answer to a question, ask us on
                         Remind. Then, read the following:
                     </p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         <p>
                             You will have 45 minutes to answer the 15
                             multiple-choice and 5 short-answer questions in your
@@ -357,7 +357,7 @@ export default function ProctorGuidePanel() {
                         <strong>Remember to give a 5-minute warning.</strong>{" "}
                         When time is up, read the following:
                     </p>
-                    <div className="inset-panel space-y-4">
+                    <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4">
                         Stop, time's up. Put your pencils down and close your
                         question packets. We will now come around and collect
                         all your papers for this round.
