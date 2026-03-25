@@ -34,12 +34,13 @@ export async function GET(request: Request) {
         await checkAdmin(request);
 
         const { data: authData, error: authError } =
-            await supabaseAdmin.auth.admin.listUsers();
+            await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
         if (authError) throw authError;
 
         const { data: roles, error: rolesError } = await supabaseAdmin
             .from("user_roles")
-            .select("id, role, morning_room, afternoon_room, checked_in");
+            .select("id, role, morning_room, afternoon_room, checked_in")
+            .limit(1000);
         if (rolesError) throw rolesError;
 
         const merged = authData.users.map((u) => {
