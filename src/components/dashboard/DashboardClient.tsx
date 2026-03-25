@@ -84,7 +84,7 @@ export default function DashboardClient({
                         </div>
                     ) : (
                         <div className="flex flex-col xl:flex-row gap-8 items-start">
-                            <div className="w-full xl:w-92 shrink-0 xl:sticky xl:top-24">
+                            <div className="w-full xl:w-92 shrink-0 xl:sticky xl:top-24 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto rounded-2xl border border-gray-300 shadow-lg no-scrollbar">
                                 <SchedulePanel />
                             </div>
 

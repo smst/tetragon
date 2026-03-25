@@ -217,7 +217,7 @@ export default function SchedulePanel() {
     };
 
     return (
-        <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-6 sm:p-8">
+        <section className="bg-white rounded-2xl p-6 sm:p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Schedule</h2>
 
             {loading ? (
