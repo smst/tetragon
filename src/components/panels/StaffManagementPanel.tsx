@@ -402,6 +402,7 @@ export default function UserManagementPanel() {
     const [afternoonRoom, setAfternoonRoom] = useState<string>("");
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
     const [modalStatus, setModalStatus] = useState<string>("");
+    const [isCollapsed, setIsCollapsed] = useState(true);
 
     useEffect(() => {
         fetchUsers();
@@ -676,80 +677,106 @@ export default function UserManagementPanel() {
     }
 
     return (
-        <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-            <div className="flex flex-col gap-4 mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
-                    User Management
-                </h2>
-                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-                                activeTab === tab.id
-                                    ? "bg-white shadow text-blue-700"
-                                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
-                            }`}
-                        >
-                            {tab.label}
-                            <span
-                                className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-                                    activeTab === tab.id
-                                        ? "bg-blue-100 text-blue-700"
-                                        : "bg-gray-200 text-gray-500"
-                                }`}
-                            >
-                                {tab.count}
-                            </span>
-                        </button>
-                    ))}
+        <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8 transition-all duration-300">
+            <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4 w-full">
+                <div className="flex flex-col gap-4">
+                    <h2 className="text-xl font-bold text-gray-900">
+                        User Management
+                    </h2>
+                    {!isCollapsed && (
+                        <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as any)}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                                        activeTab === tab.id
+                                            ? "bg-white shadow text-blue-700"
+                                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                                    }`}
+                                >
+                                    {tab.label}
+                                    <span
+                                        className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+                                            activeTab === tab.id
+                                                ? "bg-blue-100 text-blue-700"
+                                                : "bg-gray-200 text-gray-500"
+                                        }`}
+                                    >
+                                        {tab.count}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
-            </div>
-
-            {activeTab === "committee" && (
-                <UserTable
-                    list={committeeUsers}
-                    showRooms={false}
-                    showAttendance={false}
-                    onRole={openRole}
-                    onRooms={openRooms}
-                    onResend={handleResend}
-                    onDelete={openDelete}
-                />
-            )}
-            {activeTab === "proctors" && (
-                <UserTable
-                    list={proctorUsers}
-                    showRooms={true}
-                    showAttendance={true}
-                    onRole={openRole}
-                    onRooms={openRooms}
-                    onResend={handleResend}
-                    onDelete={openDelete}
-                    onToggleAttendance={handleToggleAttendance}
-                />
-            )}
-            {activeTab === "unassigned" && (
-                <UserTable
-                    list={unassignedUsers}
-                    showRooms={false}
-                    showAttendance={false}
-                    onRole={openRole}
-                    onRooms={openRooms}
-                    onResend={handleResend}
-                    onDelete={openDelete}
-                />
-            )}
-
-            <div className="mt-5 flex justify-end">
                 <button
-                    onClick={openInvite}
-                    className="px-6 py-2.5 shadow-md shadow-blue-300 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all active:scale-95 cursor-pointer text-sm"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                    + Create New User
+                    <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                        />
+                    </svg>
                 </button>
             </div>
+
+            {!isCollapsed && (
+                <>
+                    {activeTab === "committee" && (
+                        <UserTable
+                            list={committeeUsers}
+                            showRooms={false}
+                            showAttendance={false}
+                            onRole={openRole}
+                            onRooms={openRooms}
+                            onResend={handleResend}
+                            onDelete={openDelete}
+                        />
+                    )}
+                    {activeTab === "proctors" && (
+                        <UserTable
+                            list={proctorUsers}
+                            showRooms={true}
+                            showAttendance={true}
+                            onRole={openRole}
+                            onRooms={openRooms}
+                            onResend={handleResend}
+                            onDelete={openDelete}
+                            onToggleAttendance={handleToggleAttendance}
+                        />
+                    )}
+                    {activeTab === "unassigned" && (
+                        <UserTable
+                            list={unassignedUsers}
+                            showRooms={false}
+                            showAttendance={false}
+                            onRole={openRole}
+                            onRooms={openRooms}
+                            onResend={handleResend}
+                            onDelete={openDelete}
+                        />
+                    )}
+
+                    <div className="mt-5 flex justify-end">
+                        <button
+                            onClick={openInvite}
+                            className="px-6 py-2.5 shadow-md shadow-blue-300 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all active:scale-95 cursor-pointer text-sm"
+                        >
+                            + Create New User
+                        </button>
+                    </div>
+                </>
+            )}
 
             {modalType && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">

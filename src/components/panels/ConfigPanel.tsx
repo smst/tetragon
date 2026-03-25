@@ -3,8 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import RegistrationImportPanel from "./RegistrationImportPanel";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface SubPartConfig {
     label: string;
     points: number;
@@ -34,8 +32,6 @@ interface EditableRow {
 
 type ConfigTab = "team_round" | "import_competitors" | "import_volunteers";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function rowToEditable(row: TeamRoundConfigRow): EditableRow {
     return {
         id: row.id,
@@ -57,8 +53,6 @@ const SUBJECT_COLORS: Record<string, string> = {
     science: "text-green-700",
 };
 
-// ── Preview badge ─────────────────────────────────────────────────────────────
-
 function PreviewBadge({ label, points }: { label: string; points: number }) {
     return (
         <span className="inline-flex items-center gap-1 bg-gray-100 border border-gray-200 rounded px-1.5 py-0.5 text-xs mr-1 mb-1">
@@ -67,8 +61,6 @@ function PreviewBadge({ label, points }: { label: string; points: number }) {
         </span>
     );
 }
-
-// ── Team Round Config Section ─────────────────────────────────────────────────
 
 function TeamRoundConfigSection() {
     const [rows, setRows] = useState<EditableRow[]>([]);
@@ -174,7 +166,6 @@ function TeamRoundConfigSection() {
 
         const dirtyRows = rows.filter((r) => r.dirty);
 
-        // Process sequentially to ensure accurate error handling
         let hasError = false;
         for (const row of dirtyRows) {
             const { error } = await supabase
@@ -217,7 +208,6 @@ function TeamRoundConfigSection() {
 
     return (
         <div className="space-y-6">
-            {/* Global Header & Save */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
                 <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
                     Configure question weights. Add sub-parts (e.g. 1a, 1b) with
@@ -246,7 +236,6 @@ function TeamRoundConfigSection() {
                 </div>
             </div>
 
-            {/* Config Rows */}
             {SUBJECT_ORDER.map((subject) => {
                 const subjectRows = rows.filter((r) => r.subject === subject);
                 return (
@@ -420,8 +409,6 @@ function TeamRoundConfigSection() {
     );
 }
 
-// ── Volunteers Placeholder ────────────────────────────────────────────────────
-
 function VolunteersPlaceholder() {
     return (
         <div className="p-12 text-center text-gray-500 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
@@ -448,10 +435,9 @@ function VolunteersPlaceholder() {
     );
 }
 
-// ── Main ConfigPanel ──────────────────────────────────────────────────────────
-
 export default function ConfigPanel() {
     const [activeTab, setActiveTab] = useState<ConfigTab>("team_round");
+    const [isCollapsed, setIsCollapsed] = useState(true);
 
     const tabs: { id: ConfigTab; label: string }[] = [
         { id: "team_round", label: "Team Round" },
@@ -460,35 +446,61 @@ export default function ConfigPanel() {
     ];
 
     return (
-        <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-            <div className="flex flex-col gap-4 mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
-                    Tournament Configuration
-                </h2>
-                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-                                activeTab === tab.id
-                                    ? "bg-white shadow text-blue-700"
-                                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+        <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8 transition-all duration-300">
+            <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4 w-full">
+                <div className="flex flex-col gap-4">
+                    <h2 className="text-xl font-bold text-gray-900">
+                        Tournament Configuration
+                    </h2>
+                    {!isCollapsed && (
+                        <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                                        activeTab === tab.id
+                                            ? "bg-white shadow text-blue-700"
+                                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                    <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                        />
+                    </svg>
+                </button>
             </div>
 
-            <div className="min-w-0">
-                {activeTab === "team_round" && <TeamRoundConfigSection />}
-                {activeTab === "import_competitors" && (
-                    <RegistrationImportPanel />
-                )}
-                {activeTab === "import_volunteers" && <VolunteersPlaceholder />}
-            </div>
+            {!isCollapsed && (
+                <div className="min-w-0">
+                    {activeTab === "team_round" && <TeamRoundConfigSection />}
+                    {activeTab === "import_competitors" && (
+                        <RegistrationImportPanel />
+                    )}
+                    {activeTab === "import_volunteers" && (
+                        <VolunteersPlaceholder />
+                    )}
+                </div>
+            )}
         </section>
     );
 }
