@@ -15,3 +15,18 @@
 body {
     background-color: white;
 }
+
+.inset-panel {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: var(--color-gray-300);
+    border-radius: var(--radius-xl);
+    --tw-shadow:
+        0 4px 6px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1)),
+        0 2px 4px -2px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+    box-shadow:
+        var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+        var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    padding: calc(var(--spacing) * 6) /* 1.5rem = 24px */;
+    margin-block: calc(var(--spacing) * 8) /* 2rem = 32px */;
+}
