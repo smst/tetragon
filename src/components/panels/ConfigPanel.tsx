@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import RegistrationImportPanel from "./RegistrationImportPanel";
+import VolunteerImportPanel from "./VolunteerImportPanel";
 
 interface SubPartConfig {
     label: string;
@@ -409,32 +410,6 @@ function TeamRoundConfigSection() {
     );
 }
 
-function VolunteersPlaceholder() {
-    return (
-        <div className="p-12 text-center text-gray-500 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-            <svg
-                className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-            >
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
-                Coming Soon
-            </h3>
-            <p className="text-sm text-gray-500">
-                The volunteer batch importer is currently under development.
-            </p>
-        </div>
-    );
-}
-
 export default function ConfigPanel() {
     const [activeTab, setActiveTab] = useState<ConfigTab>("team_round");
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -497,7 +472,7 @@ export default function ConfigPanel() {
                         <RegistrationImportPanel />
                     )}
                     {activeTab === "import_volunteers" && (
-                        <VolunteersPlaceholder />
+                        <VolunteerImportPanel />
                     )}
                 </div>
             )}
