@@ -60,6 +60,7 @@ export default function DashboardClient({
         <>
             <ParticipantCheckInPanel />
             <GradingPanel />
+            <ScoreboardPanel />
         </>
     );
 
