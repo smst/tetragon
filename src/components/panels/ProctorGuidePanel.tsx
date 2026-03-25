@@ -141,7 +141,7 @@ export default function ProctorGuidePanel() {
                                 Morning Check-In
                             </h3>
                             <p>
-                                Please arrive at the school at 8:10 AM through
+                                Please arrive at the school at 8:15 AM through
                                 the front doors. Go to the STEAM room and find{" "}
                                 <strong>Unnimaya Sajeev or Sophie Liang</strong>{" "}
                                 to check in. Once you are checked in, head to
@@ -561,7 +561,7 @@ export default function ProctorGuidePanel() {
                                 Afternoon Check-In
                             </h3>
                             <p>
-                                Please arrive and check in by 12:30 PM. Go to
+                                Please arrive and check in by 12:15 PM. Go to
                                 the STEAM room and find{" "}
                                 <strong>Unnimaya Sajeev or Sophie Liang</strong>{" "}
                                 to check in. Once you are checked in, head to
