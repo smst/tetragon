@@ -679,8 +679,8 @@ export default function ProctorGuidePanel() {
                                 give additional instructions if needed.{" "}
                                 <strong>
                                     If they continue working on their boat,
-                                    please message us on Remind with the team
-                                    name.
+                                    please message Clark and Zaara on Remind
+                                    with the team name.
                                 </strong>
                             </p>
                             <p>
