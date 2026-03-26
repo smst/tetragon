@@ -30,6 +30,7 @@ interface ScoreboardRow {
 export default function ScoreboardPanel() {
     // Connect directly to SWR cache
     const { competitors, teams, refreshData } = useTournamentData();
+    const [isCollapsed, setIsCollapsed] = useState(true);
 
     const [activeTab, setActiveTab] = useState<"individual" | "team">(
         "individual",
@@ -161,9 +162,31 @@ export default function ScoreboardPanel() {
 
     return (
         <section className="bg-white shadow-lg border border-gray-300 rounded-2xl p-8">
-            <div className="flex flex-col gap-4 mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4 w-full">
                 <h2 className="text-xl font-bold text-gray-900">Scoreboard</h2>
-                <div className="flex flex-col sm:flex-row justify-between gap-4">
+
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                    <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                        />
+                    </svg>
+                </button>
+            </div>
+
+            {!isCollapsed && (
+                <div className="flex flex-col sm:flex-row justify-between gap-4 pb-6">
                     <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max overflow-x-auto">
                         {[
                             { id: "individual", label: "Individuals" },
@@ -200,7 +223,9 @@ export default function ScoreboardPanel() {
                         </div>
                     )}
                 </div>
+            )}
 
+            {!isCollapsed && (
                 <div className="shadow-md rounded-xl">
                     <div className="border border-gray-300 rounded-xl overflow-x-auto">
                         <table className="min-w-full border-collapse">
@@ -321,23 +346,25 @@ export default function ScoreboardPanel() {
                         </table>
                     </div>
                 </div>
-            </div>
+            )}
 
-            <div className="mt-5 flex justify-end">
-                <button
-                    onClick={handleCalculate}
-                    disabled={loadingScore}
-                    className={`px-6 py-2.5 shadow-md shadow-blue-300 text-white font-medium rounded-xl transition-all active:scale-95 text-sm ${
-                        loadingScore
-                            ? "bg-blue-400 cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                    }`}
-                >
-                    {loadingScore
-                        ? "Running Algorithm..."
-                        : "Recalculate Scores"}
-                </button>
-            </div>
+            {!isCollapsed && (
+                <div className="mt-5 flex justify-end">
+                    <button
+                        onClick={handleCalculate}
+                        disabled={loadingScore}
+                        className={`px-6 py-2.5 shadow-md shadow-blue-300 text-white font-medium rounded-xl transition-all active:scale-95 text-sm ${
+                            loadingScore
+                                ? "bg-blue-400 cursor-not-allowed"
+                                : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                        }`}
+                    >
+                        {loadingScore
+                            ? "Running Algorithm..."
+                            : "Recalculate Scores"}
+                    </button>
+                </div>
+            )}
         </section>
     );
 }
