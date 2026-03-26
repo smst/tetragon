@@ -525,9 +525,9 @@ export default function ProctorGuidePanel() {
                                 Lunch and Labs
                             </h3>
                             <p>
-                                If you are in the 1500s, you have lunch first;
-                                bring your students to the cafeteria. If you are
-                                in the 1400s or 1300s, you have lab demos first;
+                                If you are in the 1300s or 1400s, you have lunch
+                                first; bring your students to the cafeteria. If
+                                you are in the 1500s, you have lab demos first;
                                 bring your teams to the main hallway (near the
                                 STEAM room). Once your students are where they
                                 are supposed to be, you are free to leave.
@@ -541,16 +541,15 @@ export default function ProctorGuidePanel() {
                                 Lunch and Labs
                             </h3>
                             <p>
-                                If you are in the 1500s, you have lunch first;
-                                bring your students to the cafeteria. If you are
-                                in the 1400s or 1300s, you have lab demos first;
+                                If you are in the 1300s or 1400s, you have lunch
+                                first; bring your students to the cafeteria. If
+                                you are in the 1500s, you have lab demos first;
                                 bring your teams to the main hallway (near the
                                 STEAM room). Once your students are where they
                                 are supposed to be, you are free until 12:35. We
                                 will have pizza available for full-day proctors
-                                in the downstairs STEAM room. We only have
-                                enough for 2 slices per person; please be
-                                courteous.
+                                in 1402. We only have enough for 2 slices per
+                                person; please be courteous.
                             </p>
                         </>
                     )}
@@ -576,6 +575,13 @@ export default function ProctorGuidePanel() {
                             <h3 className="text-lg font-bold text-gray-800 pt-4 border-t border-gray-100">
                                 Design Challenge
                             </h3>
+                            <p>
+                                <strong>
+                                    For any questions about the design challenge
+                                    itself, text Clark Nau or Zaara Ahmad on
+                                    Remind!
+                                </strong>
+                            </p>
                             <p>
                                 By 12:35, you should be at your assigned
                                 afternoon room. As the students make their way
@@ -678,11 +684,11 @@ export default function ProctorGuidePanel() {
                                 </strong>
                             </p>
                             <p>
-                                Text Remind &quot;Room ---- is ready for
-                                testing&quot;, and SMST Labs &amp; Design
-                                members will come and test the boats. While
-                                waiting, please instruct students to throw away
-                                (or recycle) materials they did not use.
+                                On Remind, text Clark Nau &quot;Room ---- is
+                                ready for testing&quot;, and SMST Labs &amp;
+                                Design members will come and test the boats.
+                                While waiting, please instruct students to throw
+                                away (or recycle) materials they did not use.
                             </p>
                             <p className="italic">
                                 Note: Due to timing, it is possible that the
@@ -700,6 +706,10 @@ export default function ProctorGuidePanel() {
                                 are ready to start by 1:50. Make sure that
                                 everyone has returned and that their phones are
                                 still at the front of the classroom.
+                            </p>
+                            <p>
+                                Once you receive a message to start the team
+                                round, read the following:
                             </p>
                             <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4 bg-gray-50">
                                 <p>
