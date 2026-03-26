@@ -6,7 +6,7 @@ import { useTournamentData } from "@/hooks/useTournamentData";
 
 // --- SCORING CONSTANTS ---
 const M_AVAILABLE =
-    parseFloat(process.env.NEXT_PUBLIC_DESIGN_KIT_MASS || "85") || 85;
+    parseFloat(process.env.NEXT_PUBLIC_DESIGN_KIT_MASS || "62.5") || 62.5;
 const K = parseFloat(process.env.NEXT_PUBLIC_DESIGN_K_MULTIPLIER || "10") || 10;
 
 interface DesignGradingProps {
