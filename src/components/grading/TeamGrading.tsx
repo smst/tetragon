@@ -165,17 +165,36 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         fetchConfig();
     }, []);
 
-    // Fetch graded status
+    // Fetch graded status with Pagination
     useEffect(() => {
         const fetchGradedStatus = async () => {
             setLoadingGradedStatus(true);
-            const { data } = await supabase
-                .from("team_round_responses")
-                .select("team_id");
+            const ids = new Set<string>();
+            let start = 0;
+            const limit = 1000;
+            let hasMore = true;
 
-            if (data) {
-                setGradedIDs(new Set<string>(data.map((r: any) => r.team_id)));
+            while (hasMore) {
+                const { data, error } = await supabase
+                    .from("team_round_responses")
+                    .select("team_id")
+                    .range(start, start + limit - 1);
+
+                if (error || !data) {
+                    hasMore = false;
+                    break;
+                }
+
+                data.forEach((row) => ids.add(row.team_id));
+
+                if (data.length < limit) {
+                    hasMore = false;
+                } else {
+                    start += limit;
+                }
             }
+
+            setGradedIDs(ids);
             setLoadingGradedStatus(false);
         };
         fetchGradedStatus();
@@ -193,8 +212,7 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
             const { data, error } = await supabase
                 .from("team_round_responses")
                 .select("question_key, is_correct")
-                .eq("team_id", selectedTeam.id)
-                .limit(20000);
+                .eq("team_id", selectedTeam.id);
 
             if (error) {
                 setStatus("Error loading data");
@@ -227,8 +245,7 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         const { error: deleteError } = await supabase
             .from("team_round_responses")
             .delete()
-            .eq("team_id", selectedTeam.id)
-            .limit(20000);
+            .eq("team_id", selectedTeam.id);
 
         if (deleteError) {
             setStatus("Error: " + deleteError.message);

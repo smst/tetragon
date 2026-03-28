@@ -47,25 +47,38 @@ export default function IndividualGrading({
         return { groups, sortedRooms };
     }, [competitors]);
 
-    // --- 2. FETCH GRADED STATUS (On Mount) ---
+    // --- 2. FETCH GRADED STATUS (On Mount with Pagination) ---
     useEffect(() => {
         const fetchGradedStatus = async () => {
             setLoadingGradedStatus(true);
             const tableName = `${roundType}_round_responses`;
-            const { data } = await supabase
-                .from(tableName)
-                .select("competitor_id")
-                .limit(20000);
+            const ids = new Set<string>();
 
-            if (data) {
-                const ids = new Set<string>(
-                    data.map(
-                        (row: Record<string, any>) =>
-                            row.competitor_id as string,
-                    ),
-                );
-                setGradedIDs(ids);
+            let start = 0;
+            const limit = 1000;
+            let hasMore = true;
+
+            while (hasMore) {
+                const { data, error } = await supabase
+                    .from(tableName)
+                    .select("competitor_id")
+                    .range(start, start + limit - 1);
+
+                if (error || !data) {
+                    hasMore = false;
+                    break;
+                }
+
+                data.forEach((row) => ids.add(row.competitor_id as string));
+
+                if (data.length < limit) {
+                    hasMore = false;
+                } else {
+                    start += limit;
+                }
             }
+
+            setGradedIDs(ids);
             setLoadingGradedStatus(false);
         };
 
@@ -84,8 +97,7 @@ export default function IndividualGrading({
             const { data, error } = await supabase
                 .from(tableName)
                 .select("question_number, is_correct")
-                .eq("competitor_id", selectedStudent.id)
-                .limit(20000);
+                .eq("competitor_id", selectedStudent.id);
 
             if (error) {
                 setStatus("Error loading data");
