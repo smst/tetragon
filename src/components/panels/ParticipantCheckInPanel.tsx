@@ -29,7 +29,7 @@ export default function ParticipantCheckInPanel() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(true);
 
     const fetchData = async () => {
         setLoading(true);
