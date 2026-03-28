@@ -8,6 +8,7 @@ interface Competitor {
     name: string;
     checked_in: boolean;
     team_id: string | null;
+    is_captain: boolean;
 }
 
 interface Team {
@@ -46,7 +47,7 @@ export default function ParticipantCheckInPanel() {
 
         const { data: compData } = await supabase
             .from("competitors")
-            .select("id, name, checked_in, team_id")
+            .select("id, name, checked_in, team_id, is_captain")
             .order("name");
 
         if (compData) {
@@ -69,7 +70,11 @@ export default function ParticipantCheckInPanel() {
                     setCompetitors((prev) =>
                         prev.map((c) =>
                             c.id === newRow.id
-                                ? { ...c, checked_in: newRow.checked_in }
+                                ? {
+                                      ...c,
+                                      checked_in: newRow.checked_in,
+                                      is_captain: newRow.is_captain,
+                                  }
                                 : c,
                         ),
                     );
@@ -365,9 +370,16 @@ export default function ParticipantCheckInPanel() {
                                                     key={comp.id}
                                                     className="flex justify-between items-center px-5 py-3 hover:bg-gray-50 transition-colors"
                                                 >
-                                                    <span className="text-sm font-medium text-gray-700">
-                                                        {comp.name}
-                                                    </span>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-sm font-medium text-gray-700">
+                                                            {comp.name}
+                                                        </span>
+                                                        {comp.is_captain && (
+                                                            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-200 rounded-full">
+                                                                Captain
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <button
                                                         disabled={isProcessing}
                                                         onClick={() =>
