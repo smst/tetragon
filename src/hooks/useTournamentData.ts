@@ -13,8 +13,9 @@ const fetcher = async (): Promise<TournamentData> => {
         supabase
             .from("competitors")
             .select(`*, team:teams(id, name, room)`)
-            .order("name"),
-        supabase.from("teams").select("*").order("name"),
+            .order("name")
+            .limit(20000),
+        supabase.from("teams").select("*").order("name").limit(20000),
     ]);
 
     if (compRes.error) throw compRes.error;

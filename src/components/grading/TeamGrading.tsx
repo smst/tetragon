@@ -193,7 +193,8 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
             const { data, error } = await supabase
                 .from("team_round_responses")
                 .select("question_key, is_correct")
-                .eq("team_id", selectedTeam.id);
+                .eq("team_id", selectedTeam.id)
+                .limit(20000);
 
             if (error) {
                 setStatus("Error loading data");
@@ -226,7 +227,8 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         const { error: deleteError } = await supabase
             .from("team_round_responses")
             .delete()
-            .eq("team_id", selectedTeam.id);
+            .eq("team_id", selectedTeam.id)
+            .limit(20000);
 
         if (deleteError) {
             setStatus("Error: " + deleteError.message);
