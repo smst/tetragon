@@ -52,6 +52,7 @@ export default function DashboardClient({
             <ScoreboardPanel />
             <AttendancePanel />
             <StaffManagement />
+            <ProctorGuidePanel />
             <ConfigPanel />
         </>
     );
@@ -60,7 +61,6 @@ export default function DashboardClient({
         <>
             <ParticipantCheckInPanel />
             <GradingPanel />
-            <ScoreboardPanel />
         </>
     );
 

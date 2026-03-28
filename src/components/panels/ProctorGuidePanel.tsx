@@ -534,9 +534,9 @@ export default function ProctorGuidePanel() {
                                 Lunch and Labs
                             </h3>
                             <p>
-                                If you are in the 1300s or 1400s, you have lunch
-                                first; bring your students to the cafeteria. If
-                                you are in the 1500s, you have lab demos first;
+                                If you are in the 1500s, you have lunch first;
+                                bring your students to the cafeteria. If you are
+                                in the 1300s or 1400s, you have lab demos first;
                                 bring your teams to the main hallway (near the
                                 STEAM room). Once your students are where they
                                 are supposed to be, you are free to leave.
@@ -550,9 +550,9 @@ export default function ProctorGuidePanel() {
                                 Lunch and Labs
                             </h3>
                             <p>
-                                If you are in the 1300s or 1400s, you have lunch
-                                first; bring your students to the cafeteria. If
-                                you are in the 1500s, you have lab demos first;
+                                If you are in the 1500s, you have lunch first;
+                                bring your students to the cafeteria. If you are
+                                in the 1300s or 1400s, you have lab demos first;
                                 bring your teams to the main hallway (near the
                                 STEAM room). Once your students are where they
                                 are supposed to be, you are free until 12:35. We
