@@ -177,6 +177,14 @@ export default function ProctorGuidePanel() {
                                 so they can see you. Bring your teams to your
                                 assigned room.
                             </p>
+                            <p>
+                                Once you get to your room, take the index card
+                                from each team's team captain and ensure that
+                                the team names are written on the cards
+                                (alongside their guesses for the estimation
+                                round). A runner will come collect the index
+                                cards.
+                            </p>
 
                             <h3 className="text-lg font-bold text-gray-800 pt-4">
                                 Prepare for Testing
@@ -188,9 +196,10 @@ export default function ProctorGuidePanel() {
                                     Make sure to click &quot;Submit
                                     Attendance&quot;.
                                 </strong>{" "}
-                                If any team has fewer than 4 members, message
-                                Sophie on Remind. Once your attendance is
-                                complete, read the following:
+                                Only one proctor needs to submit attendance for
+                                each room. If any team has fewer than 4 members,
+                                message Sophie on Remind. Once your attendance
+                                is complete, read the following:
                             </p>
 
                             <div className="border border-gray-300 rounded-xl shadow-md p-6 my-8 space-y-4 bg-gray-50">
