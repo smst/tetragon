@@ -156,7 +156,8 @@ export async function POST(request: Request) {
                     .from("attendance_logs")
                     .delete()
                     .eq("check_in_period", period)
-                    .in("competitor_id", roomCompIds);
+                    .in("competitor_id", roomCompIds)
+                    .limit(1000);
             }
         }
 

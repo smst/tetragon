@@ -54,7 +54,8 @@ export default function IndividualGrading({
             const tableName = `${roundType}_round_responses`;
             const { data } = await supabase
                 .from(tableName)
-                .select("competitor_id");
+                .select("competitor_id")
+                .limit(20000);
 
             if (data) {
                 const ids = new Set<string>(
@@ -83,7 +84,8 @@ export default function IndividualGrading({
             const { data, error } = await supabase
                 .from(tableName)
                 .select("question_number, is_correct")
-                .eq("competitor_id", selectedStudent.id);
+                .eq("competitor_id", selectedStudent.id)
+                .limit(20000);
 
             if (error) {
                 setStatus("Error loading data");

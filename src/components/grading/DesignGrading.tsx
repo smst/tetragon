@@ -54,7 +54,8 @@ export default function DesignGrading({ teams }: DesignGradingProps) {
             setLoadingGradedStatus(true);
             const { data } = await supabase
                 .from("design_challenge_entries")
-                .select("team_id");
+                .select("team_id")
+                .limit(20000);
 
             if (data) {
                 const ids = new Set<string>(data.map((row) => row.team_id));

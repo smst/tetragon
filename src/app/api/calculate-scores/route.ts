@@ -45,14 +45,24 @@ export async function POST(request: Request) {
             { data: competitors },
             { data: allTeams },
         ] = await Promise.all([
-            supabaseAdmin.from("math_round_responses").select("*"),
-            supabaseAdmin.from("science_round_responses").select("*"),
+            supabaseAdmin.from("math_round_responses").select("*").limit(20000),
+            supabaseAdmin
+                .from("science_round_responses")
+                .select("*")
+                .limit(20000),
             supabaseAdmin
                 .from("team_round_responses")
-                .select("team_id, is_correct, points_possible"),
-            supabaseAdmin.from("design_challenge_entries").select("*"),
-            supabaseAdmin.from("competitors").select("id, team_id"),
-            supabaseAdmin.from("teams").select("id"),
+                .select("team_id, is_correct, points_possible")
+                .limit(20000),
+            supabaseAdmin
+                .from("design_challenge_entries")
+                .select("*")
+                .limit(20000),
+            supabaseAdmin
+                .from("competitors")
+                .select("id, team_id")
+                .limit(20000),
+            supabaseAdmin.from("teams").select("id").limit(20000),
         ]);
 
         const totalCompetitors = competitors?.length || 1;
