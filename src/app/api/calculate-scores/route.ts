@@ -31,6 +31,34 @@ async function checkAdmin(request: Request) {
     return user;
 }
 
+async function fetchAllRecords(tableName: string, selectQuery: string = "*") {
+    let allData: any[] = [];
+    let start = 0;
+    const limit = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+        const { data, error } = await supabaseAdmin
+            .from(tableName)
+            .select(selectQuery)
+            .range(start, start + limit - 1);
+
+        if (error) throw error;
+
+        if (data) {
+            allData.push(...data);
+            if (data.length < limit) {
+                hasMore = false;
+            } else {
+                start += limit;
+            }
+        } else {
+            hasMore = false;
+        }
+    }
+    return allData;
+}
+
 export async function POST(request: Request) {
     console.log("--- STARTING ALGORITHM ---");
 
@@ -38,36 +66,26 @@ export async function POST(request: Request) {
         await checkAdmin(request);
 
         const [
-            { data: mathResponses },
-            { data: scienceResponses },
-            { data: teamResponses },
-            { data: designEntries },
-            { data: competitors },
-            { data: allTeams },
+            mathResponses,
+            scienceResponses,
+            teamResponses,
+            designEntries,
+            competitors,
+            allTeams,
         ] = await Promise.all([
-            supabaseAdmin.from("math_round_responses").select("*").limit(20000),
-            supabaseAdmin
-                .from("science_round_responses")
-                .select("*")
-                .limit(20000),
-            supabaseAdmin
-                .from("team_round_responses")
-                .select("team_id, is_correct, points_possible")
-                .limit(20000),
-            supabaseAdmin
-                .from("design_challenge_entries")
-                .select("*")
-                .limit(20000),
-            supabaseAdmin
-                .from("competitors")
-                .select("id, team_id")
-                .limit(20000),
-            supabaseAdmin.from("teams").select("id").limit(20000),
+            fetchAllRecords("math_round_responses", "*"),
+            fetchAllRecords("science_round_responses", "*"),
+            fetchAllRecords(
+                "team_round_responses",
+                "team_id, is_correct, points_possible",
+            ),
+            fetchAllRecords("design_challenge_entries", "*"),
+            fetchAllRecords("competitors", "id, team_id"),
+            fetchAllRecords("teams", "id"),
         ]);
 
         const totalCompetitors = competitors?.length || 1;
 
-        // Individual round scoring (unchanged)
         const calculateRoundScores = (responses: any[]) => {
             const correctCounts: Record<string, number> = {};
             responses.forEach((r) => {
@@ -136,7 +154,6 @@ export async function POST(request: Request) {
             teamStats[c.team_id].members += 1;
         });
 
-        // Team round: sum points_possible for each correct response
         if (teamResponses) {
             teamResponses.forEach((r) => {
                 if (r.is_correct && teamStats[r.team_id]) {
