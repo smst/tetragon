@@ -13,6 +13,7 @@ interface Competitor {
 interface Team {
     id: string;
     name: string;
+    paid: boolean;
 }
 
 interface TeamGroup {
@@ -34,7 +35,7 @@ export default function ParticipantCheckInPanel() {
 
         const { data: teamData } = await supabase
             .from("teams")
-            .select("id, name");
+            .select("id, name, paid");
         const teamDict: Record<string, Team> = {};
         if (teamData) {
             teamData.forEach((t) => {
@@ -58,7 +59,7 @@ export default function ParticipantCheckInPanel() {
     useEffect(() => {
         fetchData();
 
-        const channel = supabase
+        const compChannel = supabase
             .channel("realtime-checkins")
             .on(
                 "postgres_changes",
@@ -76,8 +77,24 @@ export default function ParticipantCheckInPanel() {
             )
             .subscribe();
 
+        const teamChannel = supabase
+            .channel("realtime-teams")
+            .on(
+                "postgres_changes",
+                { event: "UPDATE", schema: "public", table: "teams" },
+                (payload) => {
+                    const newRow = payload.new as Team;
+                    setTeams((prev) => ({
+                        ...prev,
+                        [newRow.id]: { ...prev[newRow.id], paid: newRow.paid },
+                    }));
+                },
+            )
+            .subscribe();
+
         return () => {
-            supabase.removeChannel(channel);
+            supabase.removeChannel(compChannel);
+            supabase.removeChannel(teamChannel);
         };
     }, []);
 
@@ -170,6 +187,42 @@ export default function ParticipantCheckInPanel() {
         setIsProcessing(false);
     };
 
+    const handleTeamPayment = async (teamId: string, paid: boolean) => {
+        setIsProcessing(true);
+
+        setTeams((prev) => ({
+            ...prev,
+            [teamId]: { ...prev[teamId], paid },
+        }));
+
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+            setIsProcessing(false);
+            return;
+        }
+
+        const res = await fetch("/api/registration", {
+            method: "PATCH",
+            headers: {
+                Authorization: `Bearer ${session.access_token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ teamId, paid }),
+        });
+
+        if (!res.ok) {
+            setTeams((prev) => ({
+                ...prev,
+                [teamId]: { ...prev[teamId], paid: !paid },
+            }));
+            alert("Failed to update payment status.");
+        }
+        setIsProcessing(false);
+    };
+
     const overallProgress =
         competitors.length > 0
             ? Math.round(
@@ -221,7 +274,7 @@ export default function ParticipantCheckInPanel() {
                     )}
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="flex items-center justify-center gap-2 px-3 py-2 text-gray-600 transition-colors cursor-pointer whitespace-nowrap"
+                        className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 transition-colors cursor-pointer whitespace-nowrap"
                     >
                         <svg
                             className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
@@ -256,9 +309,14 @@ export default function ParticipantCheckInPanel() {
                             </div>
                         ) : (
                             groupedData.map((group) => {
-                                const allCheckedIn = group.competitors.every(
-                                    (c) => c.checked_in,
-                                );
+                                const isSMST = group.teamName
+                                    .trim()
+                                    .toUpperCase()
+                                    .startsWith("SMST ");
+                                const teamObj = group.teamId
+                                    ? teams[group.teamId]
+                                    : null;
+                                const isPaid = teamObj?.paid ?? false;
 
                                 return (
                                     <div
@@ -280,26 +338,26 @@ export default function ParticipantCheckInPanel() {
                                                     Present
                                                 </span>
                                             </div>
-                                            <button
-                                                disabled={isProcessing}
-                                                onClick={() =>
-                                                    handleUpdateStatus(
-                                                        group.competitors.map(
-                                                            (c) => c.id,
-                                                        ),
-                                                        !allCheckedIn,
-                                                    )
-                                                }
-                                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50 ${
-                                                    allCheckedIn
-                                                        ? "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
-                                                        : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
-                                                }`}
-                                            >
-                                                {allCheckedIn
-                                                    ? "Uncheck All"
-                                                    : "Check In Entire Team"}
-                                            </button>
+                                            {!isSMST && group.teamId && (
+                                                <button
+                                                    disabled={isProcessing}
+                                                    onClick={() =>
+                                                        handleTeamPayment(
+                                                            group.teamId!,
+                                                            !isPaid,
+                                                        )
+                                                    }
+                                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50 ${
+                                                        isPaid
+                                                            ? "bg-green-100 border border-green-200 text-green-700 hover:bg-green-200"
+                                                            : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
+                                                    }`}
+                                                >
+                                                    {isPaid
+                                                        ? "Team Paid"
+                                                        : "Mark Paid"}
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="divide-y divide-gray-100">
                                             {group.competitors.map((comp) => (

@@ -34,18 +34,35 @@ export async function PATCH(request: Request) {
             );
         }
 
-        const { competitorIds, checked_in } = await request.json();
+        const body = await request.json();
 
-        if (!Array.isArray(competitorIds) || competitorIds.length === 0) {
-            throw new Error("No competitors provided.");
+        if (body.teamId !== undefined && body.paid !== undefined) {
+            const { error: updateError } = await supabaseAdmin
+                .from("teams")
+                .update({ paid: body.paid })
+                .eq("id", body.teamId);
+
+            if (updateError) throw updateError;
+        } else if (
+            body.competitorIds !== undefined &&
+            body.checked_in !== undefined
+        ) {
+            if (
+                !Array.isArray(body.competitorIds) ||
+                body.competitorIds.length === 0
+            ) {
+                throw new Error("No competitors provided.");
+            }
+
+            const { error: updateError } = await supabaseAdmin
+                .from("competitors")
+                .update({ checked_in: body.checked_in })
+                .in("id", body.competitorIds);
+
+            if (updateError) throw updateError;
+        } else {
+            throw new Error("Invalid payload.");
         }
-
-        const { error: updateError } = await supabaseAdmin
-            .from("competitors")
-            .update({ checked_in })
-            .in("id", competitorIds);
-
-        if (updateError) throw updateError;
 
         return NextResponse.json({ success: true });
     } catch (err: any) {
