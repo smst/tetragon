@@ -500,6 +500,12 @@ export default function ProctorGuidePanel() {
                                 Remind.
                             </p>
                             <p>
+                                During the science round, SMST leads will come
+                                distribute one lunch ticket to each student.
+                                During lunch, students will bring their ticket
+                                up to receive their pizza.
+                            </p>
+                            <p>
                                 <strong>
                                     Remember to give a 5-minute warning.
                                 </strong>{" "}
