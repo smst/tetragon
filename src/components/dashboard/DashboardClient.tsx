@@ -14,6 +14,7 @@ import AttendancePanel from "@/components/panels/AttendancePanel";
 import ProctorGuidePanel from "@/components/panels/ProctorGuidePanel";
 import ConfigPanel from "@/components/panels/ConfigPanel";
 import ParticipantCheckInPanel from "@/components/panels/ParticipantCheckInPanel";
+import AnalyticsPanel from "@/components/panels/AnalyticsPanel";
 
 interface DashboardClientProps {
     userEmail: string;
@@ -50,6 +51,7 @@ export default function DashboardClient({
             <ParticipantCheckInPanel />
             <GradingPanel />
             <ScoreboardPanel />
+            <AnalyticsPanel />
             <AttendancePanel />
             <StaffManagement />
             <ProctorGuidePanel />
