@@ -253,49 +253,47 @@ export default function ParticipantCheckInPanel() {
                         Morning Registration
                     </h2>
                 </div>
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    {!isCollapsed && (
-                        <>
-                            <div className="flex flex-col items-end sm:flex">
-                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                    Total Checked In
-                                </span>
-                                <span className="text-lg font-bold text-blue-700">
-                                    {
-                                        competitors.filter((c) => c.checked_in)
-                                            .length
-                                    }{" "}
-                                    / {competitors.length}
-                                </span>
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Search student or team..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                            />
-                        </>
-                    )}
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 transition-colors cursor-pointer whitespace-nowrap"
+
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                    <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                     >
-                        <svg
-                            className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
-                    </button>
-                </div>
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                        />
+                    </svg>
+                </button>
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto mb-4">
+                {!isCollapsed && (
+                    <>
+                        <div className="flex flex-col items-end sm:flex">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                Total Checked In
+                            </span>
+                            <span className="text-lg font-bold text-blue-700">
+                                {competitors.filter((c) => c.checked_in).length}{" "}
+                                / {competitors.length}
+                            </span>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search student or team..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        />
+                    </>
+                )}
             </div>
 
             {!isCollapsed && (

@@ -15,6 +15,8 @@ import ProctorGuidePanel from "@/components/panels/ProctorGuidePanel";
 import ConfigPanel from "@/components/panels/ConfigPanel";
 import ParticipantCheckInPanel from "@/components/panels/ParticipantCheckInPanel";
 import AnalyticsPanel from "@/components/panels/AnalyticsPanel";
+import ResultsPanel from "@/components/panels/ResultsPanel";
+import RosterManagementPanel from "@/components/panels/RosterManagementPanel";
 
 interface DashboardClientProps {
     userEmail: string;
@@ -49,12 +51,13 @@ export default function DashboardClient({
     const renderAdminView = () => (
         <>
             <ParticipantCheckInPanel />
+            <RosterManagementPanel />
             <GradingPanel />
             <ScoreboardPanel />
+            <ResultsPanel />
             <AnalyticsPanel />
             <AttendancePanel />
             <StaffManagement />
-            <ProctorGuidePanel />
             <ConfigPanel />
         </>
     );
@@ -63,6 +66,8 @@ export default function DashboardClient({
         <>
             <ParticipantCheckInPanel />
             <GradingPanel />
+            <ScoreboardPanel />
+            <AnalyticsPanel />
         </>
     );
 

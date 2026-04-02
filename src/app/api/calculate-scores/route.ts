@@ -25,8 +25,8 @@ async function checkAdmin(request: Request) {
         .eq("id", user.id)
         .single();
 
-    if (roleData?.role !== "admin")
-        throw new Error("Unauthorized: Admins only");
+    if (!roleData || !["admin", "grader"].includes(roleData.role))
+        throw new Error("Unauthorized: Admins and Graders only");
 
     return user;
 }
@@ -60,8 +60,6 @@ async function fetchAllRecords(tableName: string, selectQuery: string = "*") {
 }
 
 export async function POST(request: Request) {
-    console.log("--- STARTING ALGORITHM ---");
-
     try {
         await checkAdmin(request);
 
@@ -103,24 +101,30 @@ export async function POST(request: Request) {
             });
 
             const studentScores: Record<string, number> = {};
+            const studentCorrectCounts: Record<string, number> = {};
+
             responses.forEach((r) => {
                 if (r.is_correct) {
                     const points = questionValues[r.question_number];
                     studentScores[r.competitor_id] =
                         (studentScores[r.competitor_id] || 0) + points;
+                    studentCorrectCounts[r.competitor_id] =
+                        (studentCorrectCounts[r.competitor_id] || 0) + 1;
                 }
             });
 
-            return studentScores;
+            return { scores: studentScores, counts: studentCorrectCounts };
         };
 
-        const mathScores = calculateRoundScores(mathResponses || []);
-        const scienceScores = calculateRoundScores(scienceResponses || []);
+        const mathResults = calculateRoundScores(mathResponses || []);
+        const scienceResults = calculateRoundScores(scienceResponses || []);
 
         const compUpdates = (competitors || []).map((comp) => ({
             id: comp.id,
-            math_round_score: mathScores[comp.id] || 0,
-            science_round_score: scienceScores[comp.id] || 0,
+            math_round_score: mathResults.scores[comp.id] || 0,
+            math_correct_count: mathResults.counts[comp.id] || 0,
+            science_round_score: scienceResults.scores[comp.id] || 0,
+            science_correct_count: scienceResults.counts[comp.id] || 0,
         }));
 
         if (compUpdates.length > 0) {
@@ -149,8 +153,8 @@ export async function POST(request: Request) {
 
         (competitors || []).forEach((c) => {
             if (!c.team_id || !teamStats[c.team_id]) return;
-            teamStats[c.team_id].mathSum += mathScores[c.id] || 0;
-            teamStats[c.team_id].sciSum += scienceScores[c.id] || 0;
+            teamStats[c.team_id].mathSum += mathResults.scores[c.id] || 0;
+            teamStats[c.team_id].sciSum += scienceResults.scores[c.id] || 0;
             teamStats[c.team_id].members += 1;
         });
 
@@ -198,7 +202,6 @@ export async function POST(request: Request) {
             teamsUpdated: teamUpdates.length,
         });
     } catch (err: any) {
-        console.error("API FAILURE:", err);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }

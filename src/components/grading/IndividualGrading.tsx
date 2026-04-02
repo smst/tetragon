@@ -26,7 +26,6 @@ export default function IndividualGrading({
 
     const { refreshData } = useTournamentData();
 
-    // --- 1. GROUPING LOGIC ---
     const groupedData = useMemo(() => {
         const groups: Record<string, Record<string, Competitor[]>> = {};
 
@@ -47,7 +46,6 @@ export default function IndividualGrading({
         return { groups, sortedRooms };
     }, [competitors]);
 
-    // --- 2. FETCH GRADED STATUS (On Mount with Pagination) ---
     useEffect(() => {
         const fetchGradedStatus = async () => {
             setLoadingGradedStatus(true);
@@ -85,7 +83,6 @@ export default function IndividualGrading({
         fetchGradedStatus();
     }, [roundType]);
 
-    // --- 3. FETCH GRADES (When a student is clicked) ---
     useEffect(() => {
         if (!selectedStudent) return;
 
@@ -119,7 +116,6 @@ export default function IndividualGrading({
         loadSavedGrades();
     }, [selectedStudent, roundType]);
 
-    // --- 4. HANDLERS ---
     const toggleAnswer = (qNum: number) => {
         setResponses((prev) => ({ ...prev, [qNum]: !prev[qNum] }));
         setStatus("Unsaved changes!");
@@ -149,6 +145,16 @@ export default function IndividualGrading({
         if (error) {
             setStatus("Save Failed: " + error.message);
             return;
+        }
+
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+            fetch("/api/calculate-scores", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${session.access_token}` },
+            }).catch(() => {});
         }
 
         await refreshData();

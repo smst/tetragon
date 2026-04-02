@@ -4,7 +4,6 @@ import { supabase } from "@/lib/supabaseClient";
 import { Team } from "@/types";
 import { useTournamentData } from "@/hooks/useTournamentData";
 
-// --- SCORING CONSTANTS ---
 const M_AVAILABLE =
     parseFloat(process.env.NEXT_PUBLIC_DESIGN_KIT_MASS || "62.5") || 62.5;
 const K = parseFloat(process.env.NEXT_PUBLIC_DESIGN_K_MULTIPLIER || "10") || 10;
@@ -31,7 +30,6 @@ export default function DesignGrading({ teams }: DesignGradingProps) {
 
     const { refreshData } = useTournamentData();
 
-    // --- 1. GROUPING LOGIC ---
     const groupedData = useMemo(() => {
         const groups: Record<string, Team[]> = {};
 
@@ -48,25 +46,40 @@ export default function DesignGrading({ teams }: DesignGradingProps) {
         return { groups, sortedRooms };
     }, [teams]);
 
-    // --- 2. FETCH GRADED STATUS ---
     useEffect(() => {
         const fetchGradedStatus = async () => {
             setLoadingGradedStatus(true);
-            const { data } = await supabase
-                .from("design_challenge_entries")
-                .select("team_id")
-                .limit(20000);
+            const ids = new Set<string>();
+            let start = 0;
+            const limit = 1000;
+            let hasMore = true;
 
-            if (data) {
-                const ids = new Set<string>(data.map((row) => row.team_id));
-                setGradedIDs(ids);
+            while (hasMore) {
+                const { data, error } = await supabase
+                    .from("design_challenge_entries")
+                    .select("team_id")
+                    .range(start, start + limit - 1);
+
+                if (error || !data) {
+                    hasMore = false;
+                    break;
+                }
+
+                data.forEach((row) => ids.add(row.team_id));
+
+                if (data.length < limit) {
+                    hasMore = false;
+                } else {
+                    start += limit;
+                }
             }
+
+            setGradedIDs(ids);
             setLoadingGradedStatus(false);
         };
         fetchGradedStatus();
     }, []);
 
-    // --- 3. CALCULATE SCORE ---
     useEffect(() => {
         const m_used = parseFloat(massUsed.toString());
 
@@ -95,7 +108,6 @@ export default function DesignGrading({ teams }: DesignGradingProps) {
         setCalculatedScore(score);
     }, [massUsed, isFinished, timeTaken, distanceTraveled]);
 
-    // --- 4. FETCH EXISTING DATA ---
     useEffect(() => {
         if (!selectedTeam) return;
 
@@ -132,7 +144,6 @@ export default function DesignGrading({ teams }: DesignGradingProps) {
         loadSavedData();
     }, [selectedTeam]);
 
-    // --- 5. HANDLERS ---
     const handleSave = async () => {
         if (!selectedTeam) return;
         setStatus("Saving...");
@@ -155,6 +166,18 @@ export default function DesignGrading({ teams }: DesignGradingProps) {
         if (error) {
             setStatus("Error: " + error.message);
         } else {
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
+            if (session) {
+                fetch("/api/calculate-scores", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                    },
+                }).catch(() => {});
+            }
+
             await refreshData();
             setStatus("Saved successfully!");
             setGradedIDs((prev) => new Set(prev).add(selectedTeam.id));
@@ -164,7 +187,6 @@ export default function DesignGrading({ teams }: DesignGradingProps) {
 
     return (
         <div className="space-y-6">
-            {/* --- VIEW 1: THE ROOM LIST --- */}
             {!selectedTeam && (
                 <div className="space-y-8 mt-2">
                     {groupedData.sortedRooms.length === 0 && (
@@ -224,7 +246,6 @@ export default function DesignGrading({ teams }: DesignGradingProps) {
                 </div>
             )}
 
-            {/* --- VIEW 2: THE GRADING PAD --- */}
             {selectedTeam && (
                 <div>
                     <div

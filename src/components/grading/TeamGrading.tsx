@@ -4,10 +4,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { Team } from "@/types";
 import { useTournamentData } from "@/hooks/useTournamentData";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface SubPartConfig {
-    label: string; // e.g. 'a', 'b', 'c'
+    label: string;
     points: number;
 }
 
@@ -15,19 +13,16 @@ interface TeamRoundConfigRow {
     id: string;
     subject: "math" | "science";
     question_number: number;
-    sub_parts: SubPartConfig[]; // [] = no sub-parts
-    points: number; // whole-question points when sub_parts is empty
-}
-
-// A single gradeable button — either a whole question or one sub-part
-interface GradeableUnit {
-    key: string; // e.g. 'math_1', 'science_2b'
-    subject: "math" | "science";
-    label: string; // e.g. 'Q1', 'Q2b'
+    sub_parts: SubPartConfig[];
     points: number;
 }
 
-// ── Default config ────────────────────────────────────────────────────────────
+interface GradeableUnit {
+    key: string;
+    subject: "math" | "science";
+    label: string;
+    points: number;
+}
 
 const DEFAULT_CONFIG: TeamRoundConfigRow[] = [
     { id: "d1", subject: "math", question_number: 1, sub_parts: [], points: 1 },
@@ -72,8 +67,6 @@ const DEFAULT_CONFIG: TeamRoundConfigRow[] = [
     },
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function buildUnits(config: TeamRoundConfigRow[]): GradeableUnit[] {
     const units: GradeableUnit[] = [];
     const sorted = [...config].sort(
@@ -101,8 +94,6 @@ function buildUnits(config: TeamRoundConfigRow[]): GradeableUnit[] {
     }
     return units;
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 interface TeamGradingProps {
     teams: Team[];
@@ -133,7 +124,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         [units],
     );
 
-    // Group by room
     const groupedData = useMemo(() => {
         const groups: Record<string, Team[]> = {};
         teams.forEach((t) => {
@@ -147,7 +137,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         return { groups, sortedRooms };
     }, [teams]);
 
-    // Fetch config
     useEffect(() => {
         const fetchConfig = async () => {
             setLoadingConfig(true);
@@ -165,7 +154,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         fetchConfig();
     }, []);
 
-    // Fetch graded status with Pagination
     useEffect(() => {
         const fetchGradedStatus = async () => {
             setLoadingGradedStatus(true);
@@ -200,7 +188,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         fetchGradedStatus();
     }, []);
 
-    // Load saved responses when team selected
     useEffect(() => {
         if (!selectedTeam) return;
 
@@ -232,7 +219,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         loadSaved();
     }, [selectedTeam]);
 
-    // Handlers
     const toggleAnswer = (key: string) => {
         setResponses((prev) => ({ ...prev, [key]: !prev[key] }));
         setStatus("Unsaved changes!");
@@ -269,13 +255,21 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
             return;
         }
 
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+            fetch("/api/calculate-scores", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${session.access_token}` },
+            }).catch(() => {});
+        }
+
         await refreshData();
         setGradedIDs((prev) => new Set(prev).add(selectedTeam.id));
         setStatus("Saved successfully!");
         setSelectedTeam(null);
     };
-
-    // ── Loading config ─────────────────────────────────────────────────────────
 
     if (loadingConfig) {
         return (
@@ -284,8 +278,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
             </div>
         );
     }
-
-    // ── VIEW 1: Room / team list ───────────────────────────────────────────────
 
     if (!selectedTeam) {
         return (
@@ -346,11 +338,8 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
         );
     }
 
-    // ── VIEW 2: Grading pad ────────────────────────────────────────────────────
-
     return (
         <div>
-            {/* Header bar */}
             <div
                 className={`px-5 py-3 rounded-xl mb-4 text-md font-medium flex flex-col sm:flex-row justify-between items-center gap-2 ${
                     loadingData
@@ -370,7 +359,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
                 </div>
             ) : (
                 <div className="bg-white p-6 rounded-xl border border-gray-300 shadow-md">
-                    {/* Math section */}
                     <p className="text-md text-gray-500 mb-4 font-medium">
                         Math
                     </p>
@@ -394,7 +382,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
                         ))}
                     </div>
 
-                    {/* Science section */}
                     <p className="text-md text-gray-500 mb-4 font-medium">
                         Science
                     </p>
@@ -418,7 +405,6 @@ export default function TeamGrading({ teams }: TeamGradingProps) {
                         ))}
                     </div>
 
-                    {/* Footer */}
                     <div className="flex items-center justify-end gap-3 border-t border-gray-300 pt-6">
                         <button
                             onClick={() => setSelectedTeam(null)}
