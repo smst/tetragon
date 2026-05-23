@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request) {
     const authHeader = request.headers.get("authorization");
@@ -9,7 +10,11 @@ export async function GET(request: Request) {
         return new Response("Unauthorized", { status: 401 });
     }
 
-    const { error } = await supabase.from("teams").select("id").limit(1);
+    const { error } = await supabase
+        .from("teams")
+        .select("id")
+        .eq("name", `cron-ping-${Date.now()}`)
+        .limit(1);
 
     if (error) {
         return NextResponse.json(
